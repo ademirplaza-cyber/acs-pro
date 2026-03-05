@@ -25,6 +25,68 @@ import {
 
 type ScreenMode = 'LOGIN' | 'REGISTER' | 'FORGOT_EMAIL' | 'FORGOT_CODE' | 'FORGOT_NEWPASS';
 
+// ============================================
+// COMPONENTES EXTERNOS (fora do Login para não perder foco)
+// ============================================
+
+const InputField = ({
+  label, type = 'text', value, onChange, placeholder, icon: Icon, disabled = false,
+  rightElement,
+}: {
+  label: string; type?: string; value: string; onChange: (v: string) => void;
+  placeholder: string; icon?: any; disabled?: boolean; rightElement?: React.ReactNode;
+}) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-600 mb-1.5">{label}</label>
+    <div className="relative">
+      {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />}
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+        className={`w-full ${Icon ? 'pl-11' : 'pl-4'} ${rightElement ? 'pr-12' : 'pr-4'} py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white outline-none transition-all text-gray-800 placeholder-gray-400`}
+      />
+      {rightElement && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          {rightElement}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const SubmitButton = ({
+  onClick, loading, label, loadingLabel, icon: Icon, color = 'blue',
+}: {
+  onClick?: () => void; loading: boolean; label: string; loadingLabel: string;
+  icon: any; color?: string;
+}) => {
+  const colors: Record<string, string> = {
+    blue: 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-blue-200',
+    green: 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-green-200',
+    orange: 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-orange-200',
+  };
+  return (
+    <button
+      type="submit"
+      onClick={onClick}
+      disabled={loading}
+      className={`w-full py-3.5 px-4 rounded-xl text-white font-semibold transition-all bg-gradient-to-r ${colors[color]} shadow-lg hover:shadow-xl active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-lg`}
+    >
+      <span className="flex items-center justify-center gap-2">
+        {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Icon className="w-5 h-5" />}
+        {loading ? loadingLabel : label}
+      </span>
+    </button>
+  );
+};
+
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
+
 export const Login: React.FC = () => {
   const { login, register } = useAuth();
   const navigate = useNavigate();
@@ -56,6 +118,10 @@ export const Login: React.FC = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // ============================================
+  // HANDLERS
+  // ============================================
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,10 +294,13 @@ export const Login: React.FC = () => {
     setConfirmPassword('');
   };
 
+  // ============================================
+  // MESSAGE BOX (precisa estar dentro por usar error/success)
+  // ============================================
   const MessageBox = () => (
     <>
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 animate-shake">
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
           <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
           <span className="text-red-700 text-sm">{error}</span>
         </div>
@@ -245,60 +314,9 @@ export const Login: React.FC = () => {
     </>
   );
 
-  const InputField = ({
-    label, type = 'text', value, onChange, placeholder, icon: Icon, disabled = false,
-    rightElement,
-  }: {
-    label: string; type?: string; value: string; onChange: (v: string) => void;
-    placeholder: string; icon?: any; disabled?: boolean; rightElement?: React.ReactNode;
-  }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-600 mb-1.5">{label}</label>
-      <div className="relative">
-        {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />}
-        <input
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={`w-full ${Icon ? 'pl-11' : 'pl-4'} ${rightElement ? 'pr-12' : 'pr-4'} py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white outline-none transition-all text-gray-800 placeholder-gray-400`}
-        />
-        {rightElement && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            {rightElement}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const SubmitButton = ({
-    onClick, loading, label, loadingLabel, icon: Icon, color = 'blue',
-  }: {
-    onClick?: () => void; loading: boolean; label: string; loadingLabel: string;
-    icon: any; color?: string;
-  }) => {
-    const colors: Record<string, string> = {
-      blue: 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-blue-200',
-      green: 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-green-200',
-      orange: 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-orange-200',
-    };
-    return (
-      <button
-        type="submit"
-        onClick={onClick}
-        disabled={loading}
-        className={`w-full py-3.5 px-4 rounded-xl text-white font-semibold transition-all bg-gradient-to-r ${colors[color]} shadow-lg hover:shadow-xl active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-lg`}
-      >
-        <span className="flex items-center justify-center gap-2">
-          {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Icon className="w-5 h-5" />}
-          {loading ? loadingLabel : label}
-        </span>
-      </button>
-    );
-  };
-
+  // ============================================
+  // FEATURES
+  // ============================================
   const features = [
     { icon: Users, title: 'Gestão de Famílias', desc: 'Cadastre e acompanhe todas as famílias da sua microárea' },
     { icon: ClipboardList, title: 'Visitas Domiciliares', desc: 'Agende, registre e acompanhe todas as visitas com GPS' },
@@ -306,9 +324,13 @@ export const Login: React.FC = () => {
     { icon: Cloud, title: 'Dados na Nuvem', desc: 'Seus dados seguros e acessíveis de qualquer dispositivo' },
   ];
 
+  // ============================================
+  // RENDER
+  // ============================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex">
 
+      {/* LADO ESQUERDO — Branding (só desktop) */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-indigo-800/40" />
@@ -372,9 +394,11 @@ export const Login: React.FC = () => {
         </div>
       </div>
 
+      {/* LADO DIREITO — Formulários */}
       <div className="w-full lg:w-1/2 xl:w-[45%] flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-md">
 
+          {/* Logo mobile */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center gap-3 mb-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
@@ -390,6 +414,7 @@ export const Login: React.FC = () => {
             </p>
           </div>
 
+          {/* Card principal */}
           <div className="bg-white rounded-3xl shadow-2xl shadow-black/20 overflow-hidden">
             
             <div className="px-8 pt-8 pb-4">
@@ -420,6 +445,7 @@ export const Login: React.FC = () => {
 
             <div className="px-8 pb-8">
 
+              {/* TELA: LOGIN */}
               {screenMode === 'LOGIN' && (
                 <>
                   <div className="flex mb-6 bg-gray-100 rounded-xl p-1">
@@ -497,6 +523,7 @@ export const Login: React.FC = () => {
                 </>
               )}
 
+              {/* TELA: REGISTRO */}
               {screenMode === 'REGISTER' && (
                 <>
                   <div className="flex mb-6 bg-gray-100 rounded-xl p-1">
@@ -585,6 +612,7 @@ export const Login: React.FC = () => {
                 </>
               )}
 
+              {/* TELA: ESQUECI SENHA — STEP 1: EMAIL */}
               {screenMode === 'FORGOT_EMAIL' && (
                 <>
                   <div className="text-center mb-6">
@@ -630,6 +658,7 @@ export const Login: React.FC = () => {
                 </>
               )}
 
+              {/* TELA: ESQUECI SENHA — STEP 2: CÓDIGO */}
               {screenMode === 'FORGOT_CODE' && (
                 <>
                   <div className="text-center mb-6">
@@ -702,6 +731,7 @@ export const Login: React.FC = () => {
                 </>
               )}
 
+              {/* TELA: ESQUECI SENHA — STEP 3: NOVA SENHA */}
               {screenMode === 'FORGOT_NEWPASS' && (
                 <>
                   <div className="text-center mb-6">
@@ -782,6 +812,7 @@ export const Login: React.FC = () => {
             </div>
           </div>
 
+          {/* Rodapé mobile */}
           <div className="lg:hidden text-center mt-6">
             <p className="text-blue-300/30 text-xs">
               &copy; {new Date().getFullYear()} ACS Pro — Todos os direitos reservados
