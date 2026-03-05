@@ -1,0 +1,7 @@
+{
+  "name": "ACS Pro - Saúde da Família",
+  "description": "Sistema completo para Agentes Comunitários de Saúde com gestão de famílias, visitas inteligentes e controle de acesso.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

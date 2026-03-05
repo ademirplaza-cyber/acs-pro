@@ -1,0 +1,17 @@
+{
+  "name": "ACS Pro - Saúde da Família",
+  "short_name": "ACS Pro",
+  "description": "Sistema completo para Agentes Comunitários de Saúde",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
