@@ -21,13 +21,7 @@ import {
   Heart,
   Users,
   ClipboardList,
-  Shield,
 } from 'lucide-react';
-
-// ============================================
-// TELA DE LOGIN PROFISSIONAL
-// Visual moderno para comercialização
-// ============================================
 
 type ScreenMode = 'LOGIN' | 'REGISTER' | 'FORGOT_EMAIL' | 'FORGOT_CODE' | 'FORGOT_NEWPASS';
 
@@ -62,10 +56,6 @@ export const Login: React.FC = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
-
-  // ============================================
-  // HANDLERS (mesma lógica)
-  // ============================================
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,17 +228,6 @@ export const Login: React.FC = () => {
     setConfirmPassword('');
   };
 
-  const fillAdminCredentials = () => {
-    setEmail('admin@acspro.com');
-    setPassword('admin123456');
-    setError('');
-    setSuccess('');
-  };
-
-  // ============================================
-  // COMPONENTES DE UI
-  // ============================================
-
   const MessageBox = () => (
     <>
       {error && (
@@ -320,9 +299,6 @@ export const Login: React.FC = () => {
     );
   };
 
-  // ============================================
-  // FEATURES DO LADO ESQUERDO (desktop)
-  // ============================================
   const features = [
     { icon: Users, title: 'Gestão de Famílias', desc: 'Cadastre e acompanhe todas as famílias da sua microárea' },
     { icon: ClipboardList, title: 'Visitas Domiciliares', desc: 'Agende, registre e acompanhe todas as visitas com GPS' },
@@ -330,17 +306,10 @@ export const Login: React.FC = () => {
     { icon: Cloud, title: 'Dados na Nuvem', desc: 'Seus dados seguros e acessíveis de qualquer dispositivo' },
   ];
 
-  // ============================================
-  // RENDER
-  // ============================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex">
 
-      {/* ============================================ */}
-      {/* LADO ESQUERDO — Branding (só desktop) */}
-      {/* ============================================ */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden">
-        {/* Fundo com padrão */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-indigo-800/40" />
           {[...Array(6)].map((_, i) => (
@@ -360,7 +329,6 @@ export const Login: React.FC = () => {
         </div>
 
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 w-full">
-          {/* Logo */}
           <div className="flex items-center gap-3 mb-12">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
               <Activity size={36} className="text-white" />
@@ -371,7 +339,6 @@ export const Login: React.FC = () => {
             </div>
           </div>
 
-          {/* Título */}
           <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
             A ferramenta completa para o
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300"> Agente de Saúde</span>
@@ -380,7 +347,6 @@ export const Login: React.FC = () => {
             Gerencie famílias, visitas e indicadores de saúde de forma simples e eficiente, direto do seu celular ou computador.
           </p>
 
-          {/* Features */}
           <div className="space-y-5">
             {features.map((feature, i) => (
               <div key={i} className="flex items-start gap-4 group">
@@ -395,7 +361,6 @@ export const Login: React.FC = () => {
             ))}
           </div>
 
-          {/* Rodapé do lado esquerdo */}
           <div className="mt-16 pt-8 border-t border-white/10">
             <p className="text-blue-300/30 text-xs">
               &copy; {new Date().getFullYear()} ACS Pro — Todos os direitos reservados
@@ -407,13 +372,9 @@ export const Login: React.FC = () => {
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* LADO DIREITO — Formulários */}
-      {/* ============================================ */}
       <div className="w-full lg:w-1/2 xl:w-[45%] flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-md">
 
-          {/* Logo mobile */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center gap-3 mb-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
@@ -429,12 +390,9 @@ export const Login: React.FC = () => {
             </p>
           </div>
 
-          {/* Card principal */}
           <div className="bg-white rounded-3xl shadow-2xl shadow-black/20 overflow-hidden">
             
-            {/* Header do card */}
             <div className="px-8 pt-8 pb-4">
-              {/* Indicador de conexão */}
               <div className="flex justify-center mb-6">
                 <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium ${
                   isOnline
@@ -462,9 +420,6 @@ export const Login: React.FC = () => {
 
             <div className="px-8 pb-8">
 
-              {/* ============================================ */}
-              {/* TELA: LOGIN */}
-              {/* ============================================ */}
               {screenMode === 'LOGIN' && (
                 <>
                   <div className="flex mb-6 bg-gray-100 rounded-xl p-1">
@@ -539,24 +494,9 @@ export const Login: React.FC = () => {
                       color="blue"
                     />
                   </form>
-
-                  <div className="mt-6 pt-5 border-t border-gray-100">
-                    <p className="text-[11px] text-gray-300 text-center mb-2 uppercase tracking-wider font-medium">Acesso rápido</p>
-                    <button
-                      onClick={fillAdminCredentials}
-                      className="w-full py-2.5 px-4 bg-gray-50 hover:bg-gray-100 text-gray-500 text-sm rounded-xl transition-all flex items-center justify-center gap-2 border border-gray-200"
-                      disabled={isLoading}
-                    >
-                      <Shield className="w-4 h-4" />
-                      Preencher credenciais do Admin
-                    </button>
-                  </div>
                 </>
               )}
 
-              {/* ============================================ */}
-              {/* TELA: REGISTRO */}
-              {/* ============================================ */}
               {screenMode === 'REGISTER' && (
                 <>
                   <div className="flex mb-6 bg-gray-100 rounded-xl p-1">
@@ -645,9 +585,6 @@ export const Login: React.FC = () => {
                 </>
               )}
 
-              {/* ============================================ */}
-              {/* TELA: ESQUECI SENHA — STEP 1: EMAIL */}
-              {/* ============================================ */}
               {screenMode === 'FORGOT_EMAIL' && (
                 <>
                   <div className="text-center mb-6">
@@ -693,9 +630,6 @@ export const Login: React.FC = () => {
                 </>
               )}
 
-              {/* ============================================ */}
-              {/* TELA: ESQUECI SENHA — STEP 2: CÓDIGO */}
-              {/* ============================================ */}
               {screenMode === 'FORGOT_CODE' && (
                 <>
                   <div className="text-center mb-6">
@@ -710,7 +644,7 @@ export const Login: React.FC = () => {
 
                   {generatedCode && (
                     <div className="mb-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl text-center">
-                      <p className="text-[10px] text-amber-600 mb-1 font-semibold uppercase tracking-wider">Código (modo desenvolvimento)</p>
+                      <p className="text-[10px] text-amber-600 mb-1 font-semibold uppercase tracking-wider">Código de recuperação</p>
                       <p className="text-3xl font-bold text-amber-800 tracking-[0.3em] font-mono">{generatedCode}</p>
                       <p className="text-[10px] text-amber-500 mt-2">Válido por 15 minutos</p>
                     </div>
@@ -768,9 +702,6 @@ export const Login: React.FC = () => {
                 </>
               )}
 
-              {/* ============================================ */}
-              {/* TELA: ESQUECI SENHA — STEP 3: NOVA SENHA */}
-              {/* ============================================ */}
               {screenMode === 'FORGOT_NEWPASS' && (
                 <>
                   <div className="text-center mb-6">
@@ -851,7 +782,6 @@ export const Login: React.FC = () => {
             </div>
           </div>
 
-          {/* Rodapé mobile */}
           <div className="lg:hidden text-center mt-6">
             <p className="text-blue-300/30 text-xs">
               &copy; {new Date().getFullYear()} ACS Pro — Todos os direitos reservados
@@ -860,7 +790,6 @@ export const Login: React.FC = () => {
         </div>
       </div>
 
-      {/* Animação CSS */}
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
