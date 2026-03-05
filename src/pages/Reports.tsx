@@ -15,7 +15,6 @@ import {
   Calendar,
   MapPin,
   Phone,
-  FileText,
   Filter,
   Home,
   Cloud,
@@ -39,23 +38,16 @@ export const Reports = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [isLoading, setIsLoading] = useState(true);
 
-  // ============================================
-  // ESTADOS — dados do Supabase
-  // ============================================
   const [families, setFamilies] = useState<Family[]>([]);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [allPeople, setAllPeople] = useState<Person[]>([]);
 
-  // ============================================
-  // CARREGAR DADOS DO SUPABASE
-  // ============================================
   const loadData = async () => {
     if (!user) return;
     try {
       setIsLoading(true);
       console.log('📡 Relatórios: carregando dados do Supabase...');
 
-      // Carregar famílias e visitas
       const [familiesData, visitsData] = await Promise.all([
         api.getFamilies(user.id),
         api.getVisits(user.id),
@@ -64,7 +56,6 @@ export const Reports = () => {
       setFamilies(familiesData);
       setVisits(visitsData);
 
-      // Carregar todas as pessoas de todas as famílias
       const allPeoplePromises = familiesData.map(f => api.getPeople(f.id));
       const peopleArrays = await Promise.all(allPeoplePromises);
       const allPeopleData = peopleArrays.flat();
@@ -86,9 +77,6 @@ export const Reports = () => {
     loadData();
   }, [user]);
 
-  // ============================================
-  // FUNÇÕES AUXILIARES
-  // ============================================
   const calculateAge = (birthDate: string): number => {
     const today = new Date();
     const birth = new Date(birthDate);
@@ -111,9 +99,6 @@ export const Reports = () => {
     return { weeks, days, trimester };
   };
 
-  // ============================================
-  // ESTATÍSTICAS GERAIS
-  // ============================================
   const stats = useMemo(() => {
     const pregnant = allPeople.filter((p: Person) => p.isPregnant);
     const hypertensive = allPeople.filter((p: Person) => p.hasHypertension);
@@ -121,7 +106,7 @@ export const Reports = () => {
     const children = allPeople.filter((p: Person) => calculateAge(p.birthDate) < 12);
     const childrenUnder2 = allPeople.filter((p: Person) => calculateAge(p.birthDate) < 2);
     const elderly = allPeople.filter((p: Person) => calculateAge(p.birthDate) >= 60);
-    const disabled = allPeople.filter((p: Person) => p.isDisabled);
+    const _disabled = allPeople.filter((p: Person) => p.isDisabled);
 
     const [year, month] = selectedMonth.split('-').map(Number);
     const monthStart = new Date(year, month - 1, 1);
@@ -144,7 +129,7 @@ export const Reports = () => {
       children: children.length,
       childrenUnder2: childrenUnder2.length,
       elderly: elderly.length,
-      disabled: disabled.length,
+      disabled: _disabled.length,
       monthVisits: monthVisits.length,
       completedVisits: completedVisits.length,
       visitCoverage: families.length > 0 ? (visitedFamilyIds.size / families.length * 100) : 0,
@@ -152,9 +137,6 @@ export const Reports = () => {
     };
   }, [allPeople, families, visits, selectedMonth]);
 
-  // ============================================
-  // GRUPOS PRIORITÁRIOS
-  // ============================================
   const priorityGroups = useMemo(() => {
     return {
       pregnant: allPeople.filter((p: Person) => p.isPregnant).map((p: Person): PersonWithDetails => {
@@ -219,9 +201,6 @@ export const Reports = () => {
     };
   }, [allPeople, families, visits]);
 
-  // ============================================
-  // EXPORTAR RELATÓRIO
-  // ============================================
   const handleExport = () => {
     const reportData = {
       periodo: new Date(selectedMonth + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
@@ -269,9 +248,6 @@ export const Reports = () => {
     alert('✅ Relatório exportado com sucesso!');
   };
 
-  // ============================================
-  // COMPONENTES INTERNOS
-  // ============================================
   const StatCard = ({
     icon: Icon,
     label,
@@ -335,9 +311,6 @@ export const Reports = () => {
     );
   };
 
-  // ============================================
-  // LOADING
-  // ============================================
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -356,12 +329,8 @@ export const Reports = () => {
     );
   }
 
-  // ============================================
-  // RENDER
-  // ============================================
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-800 mb-2">Relatórios e Indicadores</h1>
@@ -398,53 +367,15 @@ export const Reports = () => {
         </div>
       </div>
 
-      {/* Estatísticas Gerais */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard
-          icon={Users}
-          label="População Total"
-          value={stats.totalPeople}
-          color="blue"
-          subtext="Pessoas cadastradas"
-        />
-        <StatCard
-          icon={Home}
-          label="Famílias"
-          value={stats.totalFamilies}
-          color="green"
-          subtext="Domicílios"
-        />
-        <StatCard
-          icon={Baby}
-          label="Gestantes"
-          value={stats.pregnant}
-          color="pink"
-          subtext="Acompanhamento pré-natal"
-        />
-        <StatCard
-          icon={Heart}
-          label="Hipertensos"
-          value={stats.hypertensive}
-          color="red"
-          subtext="Controle pressão arterial"
-        />
-        <StatCard
-          icon={Activity}
-          label="Diabéticos"
-          value={stats.diabetic}
-          color="blue"
-          subtext="Controle glicêmico"
-        />
-        <StatCard
-          icon={User}
-          label="Idosos (60+)"
-          value={stats.elderly}
-          color="purple"
-          subtext="Cuidado integral"
-        />
+        <StatCard icon={Users} label="População Total" value={stats.totalPeople} color="blue" subtext="Pessoas cadastradas" />
+        <StatCard icon={Home} label="Famílias" value={stats.totalFamilies} color="green" subtext="Domicílios" />
+        <StatCard icon={Baby} label="Gestantes" value={stats.pregnant} color="pink" subtext="Acompanhamento pré-natal" />
+        <StatCard icon={Heart} label="Hipertensos" value={stats.hypertensive} color="red" subtext="Controle pressão arterial" />
+        <StatCard icon={Activity} label="Diabéticos" value={stats.diabetic} color="blue" subtext="Controle glicêmico" />
+        <StatCard icon={User} label="Idosos (60+)" value={stats.elderly} color="purple" subtext="Cuidado integral" />
       </div>
 
-      {/* Produtividade do Mês */}
       <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
@@ -469,17 +400,12 @@ export const Reports = () => {
             <p className="text-blue-100 text-sm mb-2">Cobertura Familiar</p>
             <p className="text-4xl font-bold">{stats.visitCoverage.toFixed(0)}%</p>
             <div className="w-full bg-white/20 rounded-full h-2 mt-2">
-              <div
-                className="bg-white h-2 rounded-full transition-all"
-                style={{ width: `${Math.min(stats.visitCoverage, 100)}%` }}
-              />
+              <div className="bg-white h-2 rounded-full transition-all" style={{ width: `${Math.min(stats.visitCoverage, 100)}%` }} />
             </div>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
             <p className="text-blue-100 text-sm mb-2">Média Diária</p>
-            <p className="text-4xl font-bold">
-              {stats.avgVisitsPerDay.toFixed(1)}
-            </p>
+            <p className="text-4xl font-bold">{stats.avgVisitsPerDay.toFixed(1)}</p>
             <p className="text-blue-200 text-sm mt-1">visitas/dia útil</p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
@@ -490,7 +416,6 @@ export const Reports = () => {
         </div>
       </div>
 
-      {/* Tabs de Grupos */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-wrap gap-3">
         <div className="flex items-center space-x-2 text-slate-500 text-sm mr-2">
           <Filter size={16} />
@@ -504,14 +429,11 @@ export const Reports = () => {
         <TabButton value="ELDERLY" label="Idosos" icon={User} count={stats.elderly} />
       </div>
 
-      {/* Conteúdo por Aba */}
       {activeTab === 'OVERVIEW' && (
         <div className="grid md:grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-xl border border-slate-200">
             <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-              <div className="bg-pink-100 p-2 rounded-lg mr-3">
-                <Baby size={20} className="text-pink-600" />
-              </div>
+              <div className="bg-pink-100 p-2 rounded-lg mr-3"><Baby size={20} className="text-pink-600" /></div>
               Gestantes por Trimestre
             </h3>
             {priorityGroups.pregnant.length === 0 ? (
@@ -519,14 +441,10 @@ export const Reports = () => {
             ) : (
               <div className="space-y-3">
                 {[1, 2, 3].map(trimester => {
-                  const count = priorityGroups.pregnant.filter(
-                    (p: PersonWithDetails) => p.gestationalAge?.trimester === trimester
-                  ).length;
+                  const count = priorityGroups.pregnant.filter((p: PersonWithDetails) => p.gestationalAge?.trimester === trimester).length;
                   return (
                     <div key={trimester} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <span className="text-sm font-medium text-slate-700">
-                        {trimester}º Trimestre
-                      </span>
+                      <span className="text-sm font-medium text-slate-700">{trimester}º Trimestre</span>
                       <span className="text-lg font-bold text-slate-800">{count}</span>
                     </div>
                   );
@@ -537,9 +455,7 @@ export const Reports = () => {
 
           <div className="bg-white p-6 rounded-xl border border-slate-200">
             <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-              <div className="bg-red-100 p-2 rounded-lg mr-3">
-                <AlertCircle size={20} className="text-red-600" />
-              </div>
+              <div className="bg-red-100 p-2 rounded-lg mr-3"><AlertCircle size={20} className="text-red-600" /></div>
               Alertas Prioritários
             </h3>
             <div className="space-y-3">
@@ -579,49 +495,22 @@ export const Reports = () => {
               <div key={person.id} className="bg-white p-6 rounded-xl border-2 border-pink-200 hover:shadow-md transition-all">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4 flex-1">
-                    <div className="bg-pink-100 p-3 rounded-lg">
-                      <Baby size={24} className="text-pink-600" />
-                    </div>
+                    <div className="bg-pink-100 p-3 rounded-lg"><Baby size={24} className="text-pink-600" /></div>
                     <div className="flex-1">
                       <h3 className="font-bold text-lg text-slate-800 mb-1">{person.name}</h3>
                       <div className="space-y-1 text-sm text-slate-600 mb-3">
-                        <div className="flex items-center space-x-2">
-                          <MapPin size={14} />
-                          <span>
-                            Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}
-                          </span>
-                        </div>
-                        {person.phone && (
-                          <div className="flex items-center space-x-2">
-                            <Phone size={14} />
-                            <span>{person.phone}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center space-x-2"><MapPin size={14} /><span>Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}</span></div>
+                        {person.phone && (<div className="flex items-center space-x-2"><Phone size={14} /><span>{person.phone}</span></div>)}
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {gestationalAge && (
-                          <span className="text-xs bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-medium">
-                            IG: {gestationalAge.weeks}s {gestationalAge.days}d • {gestationalAge.trimester}º Trimestre
-                          </span>
-                        )}
-                        {person.pregnancyDueDate && (
-                          <span className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-medium">
-                            DPP: {new Date(person.pregnancyDueDate).toLocaleDateString('pt-BR')}
-                          </span>
-                        )}
+                        {gestationalAge && (<span className="text-xs bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-medium">IG: {gestationalAge.weeks}s {gestationalAge.days}d • {gestationalAge.trimester}º Trimestre</span>)}
+                        {person.pregnancyDueDate && (<span className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-medium">DPP: {new Date(person.pregnancyDueDate).toLocaleDateString('pt-BR')}</span>)}
                         {daysSinceLastVisit !== null ? (
-                          <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-                            daysSinceLastVisit > 30 ? 'bg-red-100 text-red-700' :
-                            daysSinceLastVisit > 15 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>
-                            {daysSinceLastVisit > 30 ? '⚠️ ' : ''}
-                            Última visita: há {daysSinceLastVisit} dias
+                          <span className={`text-xs px-3 py-1 rounded-full font-medium ${daysSinceLastVisit > 30 ? 'bg-red-100 text-red-700' : daysSinceLastVisit > 15 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+                            {daysSinceLastVisit > 30 ? '⚠️ ' : ''}Última visita: há {daysSinceLastVisit} dias
                           </span>
                         ) : (
-                          <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium">
-                            ⚠️ Sem visitas registradas
-                          </span>
+                          <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium">⚠️ Sem visitas registradas</span>
                         )}
                       </div>
                     </div>
@@ -645,40 +534,22 @@ export const Reports = () => {
             priorityGroups.hypertensive.map(({ person, family, daysSinceLastVisit }: PersonWithDetails) => (
               <div key={person.id} className="bg-white p-6 rounded-xl border-2 border-red-200 hover:shadow-md transition-all">
                 <div className="flex items-start space-x-4">
-                  <div className="bg-red-100 p-3 rounded-lg">
-                    <Heart size={24} className="text-red-600" />
-                  </div>
+                  <div className="bg-red-100 p-3 rounded-lg"><Heart size={24} className="text-red-600" /></div>
                   <div className="flex-1">
                     <h3 className="font-bold text-lg text-slate-800 mb-1">{person.name}</h3>
                     <div className="space-y-1 text-sm text-slate-600 mb-3">
-                      <div className="flex items-center space-x-2">
-                        <MapPin size={14} />
-                        <span>Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}</span>
-                      </div>
+                      <div className="flex items-center space-x-2"><MapPin size={14} /><span>Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}</span></div>
                       <p className="text-xs text-slate-500">Idade: {calculateAge(person.birthDate)} anos</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {person.hasDiabetes && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">Também diabético</span>
-                      )}
-                      {person.medications && person.medications.length > 0 && (
-                        <span className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-medium">
-                          Medicações: {person.medications.join(', ')}
-                        </span>
-                      )}
+                      {person.hasDiabetes && (<span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">Também diabético</span>)}
+                      {person.medications && person.medications.length > 0 && (<span className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-medium">Medicações: {person.medications.join(', ')}</span>)}
                       {daysSinceLastVisit !== null ? (
-                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-                          daysSinceLastVisit > 60 ? 'bg-red-100 text-red-700' :
-                          daysSinceLastVisit > 30 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-green-100 text-green-700'
-                        }`}>
-                          {daysSinceLastVisit > 60 ? '⚠️ ' : ''}
-                          Última visita: há {daysSinceLastVisit} dias
+                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${daysSinceLastVisit > 60 ? 'bg-red-100 text-red-700' : daysSinceLastVisit > 30 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+                          {daysSinceLastVisit > 60 ? '⚠️ ' : ''}Última visita: há {daysSinceLastVisit} dias
                         </span>
                       ) : (
-                        <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium">
-                          ⚠️ Sem visitas registradas
-                        </span>
+                        <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium">⚠️ Sem visitas registradas</span>
                       )}
                     </div>
                   </div>
@@ -701,40 +572,22 @@ export const Reports = () => {
             priorityGroups.diabetic.map(({ person, family, daysSinceLastVisit }: PersonWithDetails) => (
               <div key={person.id} className="bg-white p-6 rounded-xl border-2 border-blue-200 hover:shadow-md transition-all">
                 <div className="flex items-start space-x-4">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <Activity size={24} className="text-blue-600" />
-                  </div>
+                  <div className="bg-blue-100 p-3 rounded-lg"><Activity size={24} className="text-blue-600" /></div>
                   <div className="flex-1">
                     <h3 className="font-bold text-lg text-slate-800 mb-1">{person.name}</h3>
                     <div className="space-y-1 text-sm text-slate-600 mb-3">
-                      <div className="flex items-center space-x-2">
-                        <MapPin size={14} />
-                        <span>Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}</span>
-                      </div>
+                      <div className="flex items-center space-x-2"><MapPin size={14} /><span>Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}</span></div>
                       <p className="text-xs text-slate-500">Idade: {calculateAge(person.birthDate)} anos</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {person.hasHypertension && (
-                        <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium">Também hipertenso</span>
-                      )}
-                      {person.medications && person.medications.length > 0 && (
-                        <span className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-medium">
-                          Medicações: {person.medications.join(', ')}
-                        </span>
-                      )}
+                      {person.hasHypertension && (<span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium">Também hipertenso</span>)}
+                      {person.medications && person.medications.length > 0 && (<span className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-medium">Medicações: {person.medications.join(', ')}</span>)}
                       {daysSinceLastVisit !== null ? (
-                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-                          daysSinceLastVisit > 60 ? 'bg-red-100 text-red-700' :
-                          daysSinceLastVisit > 30 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-green-100 text-green-700'
-                        }`}>
-                          {daysSinceLastVisit > 60 ? '⚠️ ' : ''}
-                          Última visita: há {daysSinceLastVisit} dias
+                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${daysSinceLastVisit > 60 ? 'bg-red-100 text-red-700' : daysSinceLastVisit > 30 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+                          {daysSinceLastVisit > 60 ? '⚠️ ' : ''}Última visita: há {daysSinceLastVisit} dias
                         </span>
                       ) : (
-                        <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium">
-                          ⚠️ Sem visitas registradas
-                        </span>
+                        <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium">⚠️ Sem visitas registradas</span>
                       )}
                     </div>
                   </div>
@@ -757,28 +610,17 @@ export const Reports = () => {
             priorityGroups.children.map(({ person, family, age }: PersonWithDetails) => (
               <div key={person.id} className="bg-white p-6 rounded-xl border-2 border-green-200 hover:shadow-md transition-all">
                 <div className="flex items-start space-x-4">
-                  <div className="bg-green-100 p-3 rounded-lg">
-                    <Baby size={24} className="text-green-600" />
-                  </div>
+                  <div className="bg-green-100 p-3 rounded-lg"><Baby size={24} className="text-green-600" /></div>
                   <div className="flex-1">
                     <h3 className="font-bold text-lg text-slate-800 mb-1">{person.name}</h3>
                     <div className="space-y-1 text-sm text-slate-600 mb-3">
-                      <div className="flex items-center space-x-2">
-                        <MapPin size={14} />
-                        <span>Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}</span>
-                      </div>
+                      <div className="flex items-center space-x-2"><MapPin size={14} /><span>Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}</span></div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-                        (age !== undefined && age < 2) ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                      }`}>
-                        {age !== undefined && age < 1 ? `${age} ano (Previne Brasil)` :
-                         age !== undefined && age < 2 ? `${age} ano(s) (Previne Brasil)` :
-                         `${age} anos`}
+                      <span className={`text-xs px-3 py-1 rounded-full font-medium ${(age !== undefined && age < 2) ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                        {age !== undefined && age < 1 ? `${age} ano (Previne Brasil)` : age !== undefined && age < 2 ? `${age} ano(s) (Previne Brasil)` : `${age} anos`}
                       </span>
-                      <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">
-                        Nasc: {new Date(person.birthDate).toLocaleDateString('pt-BR')}
-                      </span>
+                      <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">Nasc: {new Date(person.birthDate).toLocaleDateString('pt-BR')}</span>
                     </div>
                   </div>
                 </div>
@@ -800,30 +642,17 @@ export const Reports = () => {
             priorityGroups.elderly.map(({ person, family, age }: PersonWithDetails) => (
               <div key={person.id} className="bg-white p-6 rounded-xl border-2 border-purple-200 hover:shadow-md transition-all">
                 <div className="flex items-start space-x-4">
-                  <div className="bg-purple-100 p-3 rounded-lg">
-                    <User size={24} className="text-purple-600" />
-                  </div>
+                  <div className="bg-purple-100 p-3 rounded-lg"><User size={24} className="text-purple-600" /></div>
                   <div className="flex-1">
                     <h3 className="font-bold text-lg text-slate-800 mb-1">{person.name}</h3>
                     <div className="space-y-1 text-sm text-slate-600 mb-3">
-                      <div className="flex items-center space-x-2">
-                        <MapPin size={14} />
-                        <span>Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}</span>
-                      </div>
+                      <div className="flex items-center space-x-2"><MapPin size={14} /><span>Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}</span></div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <span className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-medium">
-                        {age} anos
-                      </span>
-                      {person.hasHypertension && (
-                        <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium">Hipertenso</span>
-                      )}
-                      {person.hasDiabetes && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">Diabético</span>
-                      )}
-                      {person.isDisabled && (
-                        <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-medium">PcD</span>
-                      )}
+                      <span className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-medium">{age} anos</span>
+                      {person.hasHypertension && (<span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-medium">Hipertenso</span>)}
+                      {person.hasDiabetes && (<span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">Diabético</span>)}
+                      {person.isDisabled && (<span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-medium">PcD</span>)}
                     </div>
                   </div>
                 </div>

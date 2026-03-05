@@ -1,4 +1,4 @@
-import { User, Family, Person, Visit } from '../types';
+import { User, Family, Visit } from '../types';
 
 const STORAGE_KEYS = {
   USERS: 'acs_users',
@@ -9,10 +9,6 @@ const STORAGE_KEYS = {
 };
 
 class StorageService {
-  // ============================================
-  // USER METHODS (que você já tem)
-  // ============================================
-  
   getUsers(): User[] {
     const data = localStorage.getItem(STORAGE_KEYS.USERS);
     return data ? JSON.parse(data) : [];
@@ -36,10 +32,6 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
   }
 
-  // ============================================
-  // FAMILY METHODS (novos)
-  // ============================================
-  
   getFamilies(agentId?: string): Family[] {
     const data = localStorage.getItem(STORAGE_KEYS.FAMILIES);
     const families = data ? JSON.parse(data) : [];
@@ -59,10 +51,6 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.FAMILIES, JSON.stringify(families));
   }
 
-  // ============================================
-  // VISIT METHODS (novos)
-  // ============================================
-  
   getVisits(agentId?: string): Visit[] {
     const data = localStorage.getItem(STORAGE_KEYS.VISITS);
     const visits = data ? JSON.parse(data) : [];
@@ -82,10 +70,6 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.VISITS, JSON.stringify(visits));
   }
 
-  // ============================================
-  // UTILITY METHODS
-  // ============================================
-  
   clearAllData(): void {
     Object.values(STORAGE_KEYS).forEach(key => {
       if (key !== STORAGE_KEYS.CURRENT_USER) {

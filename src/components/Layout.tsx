@@ -23,11 +23,6 @@ import {
   CheckCheck,
 } from 'lucide-react';
 
-interface LayoutProps {
-  children: React.ReactNode;
-  isOffline?: boolean;
-}
-
 interface NotificationItem {
   id: string;
   type: string;
@@ -39,13 +34,12 @@ interface NotificationItem {
   action_url?: string;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) => {
+export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   
-  // Notification States - NOVO SISTEMA SUPABASE
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -55,7 +49,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
   const isActive = (path: string) => location.pathname === path;
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Monitorar conexão
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -67,7 +60,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
     };
   }, []);
 
-  // Cálculo de dias restantes da assinatura
   const getDaysRemaining = () => {
     if (!user?.subscriptionExpiresAt || user.role === UserRole.ADMIN) return null;
     const expiration = new Date(user.subscriptionExpiresAt);
@@ -78,11 +70,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
 
   const daysRemaining = getDaysRemaining();
 
-  // ============================================
-  // SISTEMA DE NOTIFICAÇÕES SUPABASE
-  // ============================================
-
-  // Fecha dropdown ao clicar fora
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -93,7 +80,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Carrega notificações e verifica periodicamente
   useEffect(() => {
     if (!user) return;
 
@@ -111,7 +97,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
 
     loadAndCheck();
 
-    // Verificação a cada 5 minutos
     const interval = setInterval(loadAndCheck, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [user, isOnline]);
@@ -196,9 +181,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
     return date.toLocaleDateString('pt-BR');
   };
 
-  // ============================================
-  // COMPONENTE DO SININHO
-  // ============================================
   const NotificationBellComponent = ({ isMobile = false }: { isMobile?: boolean }) => {
     return (
       <div className="relative" ref={!isMobile ? dropdownRef : undefined}>
@@ -224,10 +206,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
           )}
         </button>
 
-        {/* Dropdown - só aparece no desktop ou no mobile header */}
         {isDropdownOpen && (
           <div className={`absolute ${isMobile ? 'right-0' : 'right-0'} top-full mt-2 w-80 sm:w-96 max-h-[450px] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden`}>
-            {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
               <div className="flex items-center gap-2">
                 <Bell size={16} />
@@ -249,7 +229,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
               )}
             </div>
 
-            {/* Lista */}
             <div className="max-h-[320px] overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-gray-400">
@@ -299,7 +278,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
               )}
             </div>
 
-            {/* Footer */}
             {notifications.length > 0 && (
               <div className="px-4 py-2 bg-gray-50 border-t border-gray-200">
                 <button
@@ -316,9 +294,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
     );
   };
 
-  // ============================================
-  // NAV ITEMS
-  // ============================================
   const NavItem = ({ to, icon: Icon, label, mobile }: { to: string; icon: any; label: string; mobile?: boolean }) => (
     <Link
       to={to}
@@ -341,7 +316,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
-      {/* Mobile Header */}
       <div className="md:hidden fixed w-full bg-white shadow-sm z-30 h-16 flex items-center justify-between px-4 transition-all">
         <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -361,7 +335,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
         </div>
       </div>
 
-      {/* Sidebar */}
       <aside className={`
         fixed md:static inset-y-0 left-0 w-[280px] bg-white shadow-2xl md:shadow-none transform transition-transform duration-300 ease-out z-40 flex flex-col
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
@@ -376,7 +349,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
           </div>
         </div>
 
-        {/* Mobile Header inside Sidebar */}
         <div className="md:hidden p-4 border-b border-slate-100 flex items-center justify-between h-16">
             <div className="flex items-center space-x-2 text-blue-600">
               <Activity size={24} />
@@ -405,9 +377,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
           )}
         </div>
 
-        {/* Sidebar Footer */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/50 safe-area-bottom">
-          {/* Notificações Desktop */}
           <div className="hidden md:flex items-center justify-between mb-4 px-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-medium text-slate-600">Notificações</span>
@@ -435,7 +405,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
         </div>
       </aside>
 
-      {/* Overlay */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm transition-opacity"
@@ -443,10 +412,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
         />
       )}
 
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden pt-16 md:pt-0 pb-20 md:pb-0 bg-slate-50">
         <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-full">
-          {/* Alerta de assinatura */}
           {daysRemaining !== null && daysRemaining <= 7 && daysRemaining >= 0 && (
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 flex items-center gap-3">
               <div className="p-2 bg-orange-100 rounded-lg">
@@ -461,7 +428,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
             </div>
           )}
 
-          {/* Banner offline */}
           {!isOnline && (
             <div className="bg-slate-800 text-white p-4 rounded-xl mb-6 flex items-center shadow-lg">
               <div className="bg-orange-500 p-2 rounded-lg mr-3">
@@ -480,7 +446,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, isOffline = false }) =
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-16 flex items-center justify-around z-30 safe-area-bottom shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
         <NavItem to="/" icon={LayoutDashboard} label="Início" mobile />
         <NavItem to="/visits" icon={ClipboardList} label="Visitas" mobile />
