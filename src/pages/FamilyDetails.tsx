@@ -72,7 +72,17 @@ export const FamilyDetails = () => {
     lastMenstrualPeriod: '',
     isDisabled: false,
     chronicDiseases: '',
-    medications: ''
+    medications: '',
+    // Novos campos
+    isBedridden: false,
+    hasMobilityDifficulty: false,
+    usesInsulin: false,
+    isSmoker: false,
+    isWorking: false,
+    receivesBolsaFamilia: false,
+    nisNumber: '',
+    isHighRiskPregnancy: false,
+    rareDiseases: '',
   });
 
   // Hook para carregar família do Supabase
@@ -140,7 +150,10 @@ export const FamilyDetails = () => {
       pregnant: people.filter(p => p.isPregnant).length,
       hypertensive: people.filter(p => p.hasHypertension).length,
       diabetic: people.filter(p => p.hasDiabetes).length,
-      disabled: people.filter(p => p.isDisabled).length
+      disabled: people.filter(p => p.isDisabled).length,
+      bedridden: people.filter(p => p.isBedridden).length,
+      insulin: people.filter(p => p.usesInsulin).length,
+      smoker: people.filter(p => p.isSmoker).length,
     };
   }, [people]);
 
@@ -163,7 +176,16 @@ export const FamilyDetails = () => {
       lastMenstrualPeriod: '',
       isDisabled: false,
       chronicDiseases: '',
-      medications: ''
+      medications: '',
+      isBedridden: false,
+      hasMobilityDifficulty: false,
+      usesInsulin: false,
+      isSmoker: false,
+      isWorking: false,
+      receivesBolsaFamilia: false,
+      nisNumber: '',
+      isHighRiskPregnancy: false,
+      rareDiseases: '',
     });
   };
 
@@ -209,8 +231,17 @@ export const FamilyDetails = () => {
         isDisabled: formData.isDisabled,
         chronicDiseases: formData.chronicDiseases ? formData.chronicDiseases.split('\n').filter(d => d.trim()) : undefined,
         medications: formData.medications ? formData.medications.split('\n').filter(m => m.trim()) : undefined,
+        isBedridden: formData.isBedridden,
+        hasMobilityDifficulty: formData.hasMobilityDifficulty,
+        usesInsulin: formData.usesInsulin,
+        isSmoker: formData.isSmoker,
+        isWorking: formData.isWorking,
+        receivesBolsaFamilia: formData.receivesBolsaFamilia,
+        nisNumber: formData.receivesBolsaFamilia ? (formData.nisNumber || undefined) : undefined,
+        isHighRiskPregnancy: formData.isPregnant ? formData.isHighRiskPregnancy : false,
+        rareDiseases: formData.rareDiseases || '',
         createdAt: editingPerson ? editingPerson.createdAt : new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       // Se marcou como responsável, atualizar no banco
@@ -256,7 +287,16 @@ export const FamilyDetails = () => {
       lastMenstrualPeriod: person.lastMenstrualPeriod || '',
       isDisabled: person.isDisabled,
       chronicDiseases: person.chronicDiseases?.join('\n') || '',
-      medications: person.medications?.join('\n') || ''
+      medications: person.medications?.join('\n') || '',
+      isBedridden: person.isBedridden,
+      hasMobilityDifficulty: person.hasMobilityDifficulty,
+      usesInsulin: person.usesInsulin,
+      isSmoker: person.isSmoker,
+      isWorking: person.isWorking,
+      receivesBolsaFamilia: person.receivesBolsaFamilia,
+      nisNumber: person.nisNumber || '',
+      isHighRiskPregnancy: person.isHighRiskPregnancy,
+      rareDiseases: person.rareDiseases || '',
     });
     setIsFormOpen(true);
   };
@@ -346,61 +386,56 @@ export const FamilyDetails = () => {
       </div>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <Users size={20} className="text-slate-600" />
-            <span className="text-2xl font-bold text-slate-800">{stats.total}</span>
-          </div>
-          <p className="text-xs text-slate-600 font-medium">Total</p>
+      <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-3">
+        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm text-center">
+          <Users size={18} className="text-slate-600 mx-auto mb-1" />
+          <span className="text-xl font-bold text-slate-800 block">{stats.total}</span>
+          <p className="text-[10px] text-slate-600 font-medium">Total</p>
         </div>
-
-        <div className="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <Baby size={20} className="text-green-600" />
-            <span className="text-2xl font-bold text-slate-800">{stats.children}</span>
-          </div>
-          <p className="text-xs text-slate-600 font-medium">Crianças</p>
+        <div className="bg-white p-3 rounded-xl border border-green-200 shadow-sm text-center">
+          <Baby size={18} className="text-green-600 mx-auto mb-1" />
+          <span className="text-xl font-bold text-slate-800 block">{stats.children}</span>
+          <p className="text-[10px] text-slate-600 font-medium">Crianças</p>
         </div>
-
-        <div className="bg-white p-4 rounded-xl border border-purple-200 shadow-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <User size={20} className="text-purple-600" />
-            <span className="text-2xl font-bold text-slate-800">{stats.elderly}</span>
-          </div>
-          <p className="text-xs text-slate-600 font-medium">Idosos</p>
+        <div className="bg-white p-3 rounded-xl border border-purple-200 shadow-sm text-center">
+          <User size={18} className="text-purple-600 mx-auto mb-1" />
+          <span className="text-xl font-bold text-slate-800 block">{stats.elderly}</span>
+          <p className="text-[10px] text-slate-600 font-medium">Idosos</p>
         </div>
-
-        <div className="bg-white p-4 rounded-xl border border-pink-200 shadow-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <Baby size={20} className="text-pink-600" />
-            <span className="text-2xl font-bold text-slate-800">{stats.pregnant}</span>
-          </div>
-          <p className="text-xs text-slate-600 font-medium">Gestantes</p>
+        <div className="bg-white p-3 rounded-xl border border-pink-200 shadow-sm text-center">
+          <Baby size={18} className="text-pink-600 mx-auto mb-1" />
+          <span className="text-xl font-bold text-slate-800 block">{stats.pregnant}</span>
+          <p className="text-[10px] text-slate-600 font-medium">Gestantes</p>
         </div>
-
-        <div className="bg-white p-4 rounded-xl border border-red-200 shadow-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <Heart size={20} className="text-red-600" />
-            <span className="text-2xl font-bold text-slate-800">{stats.hypertensive}</span>
-          </div>
-          <p className="text-xs text-slate-600 font-medium">Hipertensos</p>
+        <div className="bg-white p-3 rounded-xl border border-red-200 shadow-sm text-center">
+          <Heart size={18} className="text-red-600 mx-auto mb-1" />
+          <span className="text-xl font-bold text-slate-800 block">{stats.hypertensive}</span>
+          <p className="text-[10px] text-slate-600 font-medium">Hipertensos</p>
         </div>
-
-        <div className="bg-white p-4 rounded-xl border border-blue-200 shadow-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <Activity size={20} className="text-blue-600" />
-            <span className="text-2xl font-bold text-slate-800">{stats.diabetic}</span>
-          </div>
-          <p className="text-xs text-slate-600 font-medium">Diabéticos</p>
+        <div className="bg-white p-3 rounded-xl border border-blue-200 shadow-sm text-center">
+          <Activity size={18} className="text-blue-600 mx-auto mb-1" />
+          <span className="text-xl font-bold text-slate-800 block">{stats.diabetic}</span>
+          <p className="text-[10px] text-slate-600 font-medium">Diabéticos</p>
         </div>
-
-        <div className="bg-white p-4 rounded-xl border border-orange-200 shadow-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <User size={20} className="text-orange-600" />
-            <span className="text-2xl font-bold text-slate-800">{stats.disabled}</span>
-          </div>
-          <p className="text-xs text-slate-600 font-medium">PcD</p>
+        <div className="bg-white p-3 rounded-xl border border-orange-200 shadow-sm text-center">
+          <User size={18} className="text-orange-600 mx-auto mb-1" />
+          <span className="text-xl font-bold text-slate-800 block">{stats.disabled}</span>
+          <p className="text-[10px] text-slate-600 font-medium">PcD</p>
+        </div>
+        <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-sm text-center">
+          <span className="text-lg block mb-1">🛏️</span>
+          <span className="text-xl font-bold text-slate-800 block">{stats.bedridden}</span>
+          <p className="text-[10px] text-slate-600 font-medium">Acamados</p>
+        </div>
+        <div className="bg-white p-3 rounded-xl border border-cyan-200 shadow-sm text-center">
+          <span className="text-lg block mb-1">💉</span>
+          <span className="text-xl font-bold text-slate-800 block">{stats.insulin}</span>
+          <p className="text-[10px] text-slate-600 font-medium">Insulina</p>
+        </div>
+        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm text-center">
+          <span className="text-lg block mb-1">🚬</span>
+          <span className="text-xl font-bold text-slate-800 block">{stats.smoker}</span>
+          <p className="text-[10px] text-slate-600 font-medium">Fumantes</p>
         </div>
       </div>
 
@@ -506,6 +541,12 @@ export const FamilyDetails = () => {
                       )}
                     </span>
                   )}
+
+                  {person.isHighRiskPregnancy && person.isPregnant && (
+                    <span className="text-xs bg-red-200 text-red-800 px-2 py-1 rounded-full font-medium">
+                      ⚠️ Alto Risco
+                    </span>
+                  )}
                   
                   {person.hasHypertension && (
                     <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium flex items-center">
@@ -521,9 +562,45 @@ export const FamilyDetails = () => {
                     </span>
                   )}
 
+                  {person.usesInsulin && (
+                    <span className="text-xs bg-cyan-100 text-cyan-700 px-2 py-1 rounded-full font-medium">
+                      💉 Insulina
+                    </span>
+                  )}
+
+                  {person.isBedridden && (
+                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-medium">
+                      🛏️ Acamado
+                    </span>
+                  )}
+
+                  {person.hasMobilityDifficulty && (
+                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-medium">
+                      🦽 Dif. Locomoção
+                    </span>
+                  )}
+
+                  {person.isSmoker && (
+                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full font-medium">
+                      🚬 Fumante
+                    </span>
+                  )}
+
                   {person.isDisabled && (
                     <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
                       ♿ Deficiência
+                    </span>
+                  )}
+
+                  {person.receivesBolsaFamilia && (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                      💰 Bolsa Família
+                    </span>
+                  )}
+
+                  {person.isWorking && (
+                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-medium">
+                      💼 Trabalha
                     </span>
                   )}
 
@@ -545,7 +622,7 @@ export const FamilyDetails = () => {
                     </span>
                   )}
 
-                  {!person.hasHypertension && !person.hasDiabetes && !person.isPregnant && !person.isDisabled && (
+                  {!person.hasHypertension && !person.hasDiabetes && !person.isPregnant && !person.isDisabled && !person.isBedridden && !person.usesInsulin && !person.isSmoker && (
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium flex items-center">
                       <CheckCircle2 size={12} className="mr-1" />
                       Sem condições especiais
@@ -591,6 +668,7 @@ export const FamilyDetails = () => {
 
             <form onSubmit={handleSavePerson} className="p-6 space-y-6">
               
+              {/* SEÇÃO 1 - Dados Pessoais */}
               <div className="bg-slate-50 p-4 rounded-xl">
                 <h3 className="font-bold text-slate-800 mb-4 flex items-center">
                   <span className="bg-purple-100 text-purple-600 w-8 h-8 rounded-lg flex items-center justify-center mr-3 text-sm">1</span>
@@ -653,9 +731,7 @@ export const FamilyDetails = () => {
 
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        CPF
-                      </label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">CPF</label>
                       <input
                         type="text"
                         value={formData.cpf}
@@ -665,11 +741,8 @@ export const FamilyDetails = () => {
                         disabled={isSaving}
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        CNS (Cartão SUS)
-                      </label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">CNS (Cartão SUS)</label>
                       <input
                         type="text"
                         value={formData.cns}
@@ -679,11 +752,8 @@ export const FamilyDetails = () => {
                         disabled={isSaving}
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        Telefone
-                      </label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Telefone</label>
                       <input
                         type="tel"
                         value={formData.phone}
@@ -697,9 +767,7 @@ export const FamilyDetails = () => {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        Ocupação
-                      </label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Ocupação</label>
                       <input
                         type="text"
                         value={formData.occupation}
@@ -709,7 +777,6 @@ export const FamilyDetails = () => {
                         disabled={isSaving}
                       />
                     </div>
-
                     <div className="flex items-end">
                       <label className="flex items-center space-x-3 p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-purple-500 transition-colors w-full">
                         <input
@@ -719,15 +786,14 @@ export const FamilyDetails = () => {
                           className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
                           disabled={isSaving}
                         />
-                        <span className="text-sm font-medium text-slate-700">
-                          👤 Responsável pela família
-                        </span>
+                        <span className="text-sm font-medium text-slate-700">👤 Responsável pela família</span>
                       </label>
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* SEÇÃO 2 - Condições de Saúde */}
               <div className="bg-slate-50 p-4 rounded-xl">
                 <h3 className="font-bold text-slate-800 mb-4 flex items-center">
                   <span className="bg-purple-100 text-purple-600 w-8 h-8 rounded-lg flex items-center justify-center mr-3 text-sm">2</span>
@@ -736,124 +802,161 @@ export const FamilyDetails = () => {
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-3 gap-4">
                     <label className="flex items-center space-x-3 p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-red-500 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.hasHypertension}
-                        onChange={(e) => setFormData({...formData, hasHypertension: e.target.checked})}
-                        className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
-                        disabled={isSaving}
-                      />
+                      <input type="checkbox" checked={formData.hasHypertension} onChange={(e) => setFormData({...formData, hasHypertension: e.target.checked})} className="w-5 h-5 text-red-600 rounded" disabled={isSaving} />
                       <span className="text-sm font-medium text-slate-700">❤️ Hipertensão</span>
                     </label>
-
                     <label className="flex items-center space-x-3 p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.hasDiabetes}
-                        onChange={(e) => setFormData({...formData, hasDiabetes: e.target.checked})}
-                        className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                        disabled={isSaving}
-                      />
+                      <input type="checkbox" checked={formData.hasDiabetes} onChange={(e) => setFormData({...formData, hasDiabetes: e.target.checked})} className="w-5 h-5 text-blue-600 rounded" disabled={isSaving} />
                       <span className="text-sm font-medium text-slate-700">🩸 Diabetes</span>
                     </label>
-
-                    <label className="flex items-center space-x-3 p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.isDisabled}
-                        onChange={(e) => setFormData({...formData, isDisabled: e.target.checked})}
-                        className="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
-                        disabled={isSaving}
-                      />
-                      <span className="text-sm font-medium text-slate-700">♿ Deficiência</span>
+                    <label className="flex items-center space-x-3 p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-cyan-500 transition-colors">
+                      <input type="checkbox" checked={formData.usesInsulin} onChange={(e) => setFormData({...formData, usesInsulin: e.target.checked})} className="w-5 h-5 text-cyan-600 rounded" disabled={isSaving} />
+                      <span className="text-sm font-medium text-slate-700">💉 Usa Insulina</span>
                     </label>
                   </div>
 
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <label className="flex items-center space-x-3 p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
+                      <input type="checkbox" checked={formData.isDisabled} onChange={(e) => setFormData({...formData, isDisabled: e.target.checked})} className="w-5 h-5 text-orange-600 rounded" disabled={isSaving} />
+                      <span className="text-sm font-medium text-slate-700">♿ Deficiência</span>
+                    </label>
+                    <label className="flex items-center space-x-3 p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-amber-500 transition-colors">
+                      <input type="checkbox" checked={formData.isBedridden} onChange={(e) => setFormData({...formData, isBedridden: e.target.checked})} className="w-5 h-5 text-amber-600 rounded" disabled={isSaving} />
+                      <span className="text-sm font-medium text-slate-700">🛏️ Acamado</span>
+                    </label>
+                    <label className="flex items-center space-x-3 p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-yellow-500 transition-colors">
+                      <input type="checkbox" checked={formData.hasMobilityDifficulty} onChange={(e) => setFormData({...formData, hasMobilityDifficulty: e.target.checked})} className="w-5 h-5 text-yellow-600 rounded" disabled={isSaving} />
+                      <span className="text-sm font-medium text-slate-700">🦽 Dificuldade de Locomoção</span>
+                    </label>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <label className="flex items-center space-x-3 p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-gray-500 transition-colors">
+                      <input type="checkbox" checked={formData.isSmoker} onChange={(e) => setFormData({...formData, isSmoker: e.target.checked})} className="w-5 h-5 text-gray-600 rounded" disabled={isSaving} />
+                      <span className="text-sm font-medium text-slate-700">🚬 Fumante</span>
+                    </label>
+                    <label className="flex items-center space-x-3 p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors">
+                      <input type="checkbox" checked={formData.isWorking} onChange={(e) => setFormData({...formData, isWorking: e.target.checked})} className="w-5 h-5 text-indigo-600 rounded" disabled={isSaving} />
+                      <span className="text-sm font-medium text-slate-700">💼 Trabalha</span>
+                    </label>
+                  </div>
+
+                  {/* Gestante */}
                   {formData.gender === 'F' && (
                     <div className="bg-pink-50 border-2 border-pink-200 rounded-xl p-4">
                       <label className="flex items-center space-x-3 cursor-pointer mb-4">
-                        <input
-                          type="checkbox"
-                          checked={formData.isPregnant}
-                          onChange={(e) => setFormData({...formData, isPregnant: e.target.checked})}
-                          className="w-5 h-5 text-pink-600 rounded focus:ring-2 focus:ring-pink-500"
-                          disabled={isSaving}
-                        />
+                        <input type="checkbox" checked={formData.isPregnant} onChange={(e) => setFormData({...formData, isPregnant: e.target.checked})} className="w-5 h-5 text-pink-600 rounded" disabled={isSaving} />
                         <span className="text-sm font-medium text-slate-700">🤰 Gestante</span>
                       </label>
 
                       {formData.isPregnant && (
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">
-                              Data da Última Menstruação (DUM) *
-                            </label>
-                            <input
-                              type="date"
-                              required={formData.isPregnant}
-                              value={formData.lastMenstrualPeriod}
-                              onChange={(e) => setFormData({...formData, lastMenstrualPeriod: e.target.value})}
-                              max={new Date().toISOString().split('T')[0]}
-                              className="w-full px-4 py-3 border-2 border-pink-200 rounded-lg focus:border-pink-500 focus:ring-4 focus:ring-pink-100 outline-none"
-                              disabled={isSaving}
-                            />
-                            {formData.lastMenstrualPeriod && (
-                              <p className="text-xs text-pink-700 mt-1 font-medium">
-                                IG: {calculateGestationalAge(formData.lastMenstrualPeriod)}
-                              </p>
-                            )}
+                        <div className="space-y-4">
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                Data da Última Menstruação (DUM) *
+                              </label>
+                              <input
+                                type="date"
+                                required={formData.isPregnant}
+                                value={formData.lastMenstrualPeriod}
+                                onChange={(e) => setFormData({...formData, lastMenstrualPeriod: e.target.value})}
+                                max={new Date().toISOString().split('T')[0]}
+                                className="w-full px-4 py-3 border-2 border-pink-200 rounded-lg focus:border-pink-500 focus:ring-4 focus:ring-pink-100 outline-none"
+                                disabled={isSaving}
+                              />
+                              {formData.lastMenstrualPeriod && (
+                                <p className="text-xs text-pink-700 mt-1 font-medium">
+                                  IG: {calculateGestationalAge(formData.lastMenstrualPeriod)}
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                Data Provável do Parto (DPP)
+                              </label>
+                              <input
+                                type="date"
+                                value={formData.pregnancyDueDate}
+                                onChange={(e) => setFormData({...formData, pregnancyDueDate: e.target.value})}
+                                min={new Date().toISOString().split('T')[0]}
+                                className="w-full px-4 py-3 border-2 border-pink-200 rounded-lg focus:border-pink-500 focus:ring-4 focus:ring-pink-100 outline-none"
+                                disabled={isSaving}
+                              />
+                            </div>
                           </div>
-
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">
-                              Data Provável do Parto (DPP)
-                            </label>
-                            <input
-                              type="date"
-                              value={formData.pregnancyDueDate}
-                              onChange={(e) => setFormData({...formData, pregnancyDueDate: e.target.value})}
-                              min={new Date().toISOString().split('T')[0]}
-                              className="w-full px-4 py-3 border-2 border-pink-200 rounded-lg focus:border-pink-500 focus:ring-4 focus:ring-pink-100 outline-none"
-                              disabled={isSaving}
-                            />
-                          </div>
+                          <label className="flex items-center space-x-3 p-4 bg-red-50 border-2 border-red-200 rounded-lg cursor-pointer hover:border-red-400 transition-colors">
+                            <input type="checkbox" checked={formData.isHighRiskPregnancy} onChange={(e) => setFormData({...formData, isHighRiskPregnancy: e.target.checked})} className="w-5 h-5 text-red-600 rounded" disabled={isSaving} />
+                            <span className="text-sm font-medium text-red-700">⚠️ Gestação de Alto Risco</span>
+                          </label>
                         </div>
                       )}
                     </div>
                   )}
 
+                  {/* Bolsa Família */}
+                  <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
+                    <label className="flex items-center space-x-3 cursor-pointer mb-4">
+                      <input type="checkbox" checked={formData.receivesBolsaFamilia} onChange={(e) => setFormData({...formData, receivesBolsaFamilia: e.target.checked})} className="w-5 h-5 text-green-600 rounded" disabled={isSaving} />
+                      <span className="text-sm font-medium text-slate-700">💰 Recebe Bolsa Família</span>
+                    </label>
+                    {formData.receivesBolsaFamilia && (
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Número do NIS</label>
+                        <input
+                          type="text"
+                          value={formData.nisNumber}
+                          onChange={(e) => setFormData({...formData, nisNumber: e.target.value})}
+                          className="w-full px-4 py-3 border-2 border-green-200 rounded-lg focus:border-green-500 focus:ring-4 focus:ring-green-100 outline-none"
+                          placeholder="Número do NIS"
+                          disabled={isSaving}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Doenças e Medicamentos */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        Doenças Crônicas
-                      </label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Doenças Crônicas</label>
                       <textarea
                         value={formData.chronicDiseases}
                         onChange={(e) => setFormData({...formData, chronicDiseases: e.target.value})}
                         rows={3}
                         className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none resize-none"
-                        placeholder="Liste outras doenças (uma por linha):&#10;- Asma&#10;- Artrite&#10;- Depressão"
+                        placeholder="Uma por linha:&#10;Asma&#10;Artrite"
                         disabled={isSaving}
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        Medicamentos em Uso
-                      </label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Medicamentos em Uso</label>
                       <textarea
                         value={formData.medications}
                         onChange={(e) => setFormData({...formData, medications: e.target.value})}
                         rows={3}
                         className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none resize-none"
-                        placeholder="Liste os medicamentos (uma por linha):&#10;- Losartana 50mg - 1x ao dia&#10;- Metformina 850mg - 2x ao dia"
+                        placeholder="Um por linha:&#10;Losartana 50mg&#10;Metformina 850mg"
                         disabled={isSaving}
                       />
                     </div>
                   </div>
+
+                  {/* Doenças raras */}
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Doenças Raras</label>
+                    <input
+                      type="text"
+                      value={formData.rareDiseases}
+                      onChange={(e) => setFormData({...formData, rareDiseases: e.target.value})}
+                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none"
+                      placeholder="Ex: Fibrose cística, Doença de Gaucher"
+                      disabled={isSaving}
+                    />
+                  </div>
                 </div>
               </div>
 
+              {/* Botões */}
               <div className="flex space-x-4 pt-4 border-t border-slate-200">
                 <button
                   type="button"

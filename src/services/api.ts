@@ -472,8 +472,18 @@ export const api = {
       isDisabled: row.is_disabled ?? false,
       chronicDiseases: row.chronic_diseases || [],
       medications: row.medications || [],
+      isBedridden: row.is_bedridden ?? false,
+      hasMobilityDifficulty: row.has_mobility_difficulty ?? false,
+      usesInsulin: row.uses_insulin ?? false,
+      isSmoker: row.is_smoker ?? false,
+      isWorking: row.is_working ?? false,
+      receivesBolsaFamilia: row.receives_bolsa_familia ?? false,
+      nisNumber: row.nis_number || '',
+      isHighRiskPregnancy: row.is_high_risk_pregnancy ?? false,
+      rareDiseases: row.rare_diseases || '',
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+
     }));
 
     console.log('✅ Pessoas mapeadas:', people.length);
@@ -501,7 +511,17 @@ export const api = {
       is_disabled: person.isDisabled ?? false,
       chronic_diseases: person.chronicDiseases || [],
       medications: person.medications || [],
+      is_bedridden: person.isBedridden ?? false,
+      has_mobility_difficulty: person.hasMobilityDifficulty ?? false,
+      uses_insulin: person.usesInsulin ?? false,
+      is_smoker: person.isSmoker ?? false,
+      is_working: person.isWorking ?? false,
+      receives_bolsa_familia: person.receivesBolsaFamilia ?? false,
+      nis_number: person.nisNumber || null,
+      is_high_risk_pregnancy: person.isHighRiskPregnancy ?? false,
+      rare_diseases: person.rareDiseases || null,
       updated_at: new Date().toISOString(),
+
     };
 
     if (person.id) {

@@ -104,14 +104,26 @@ export interface Person {
   pregnancyDueDate?: string;      // Data provável do parto
   lastMenstrualPeriod?: string;   // DUM para cálculo IG
   
-  // Informações complementares
+    // Informações complementares
   occupation?: string;
   isDisabled: boolean;
   chronicDiseases?: string[];
   medications?: string[];
   
+  // Novos campos adicionados
+  isBedridden: boolean;
+  hasMobilityDifficulty: boolean;
+  usesInsulin: boolean;
+  isSmoker: boolean;
+  isWorking: boolean;
+  receivesBolsaFamilia: boolean;
+  nisNumber?: string;
+  isHighRiskPregnancy: boolean;
+  rareDiseases?: string;
+  
   createdAt: string;
   updatedAt: string;
+
 }
 
 // ============================================
