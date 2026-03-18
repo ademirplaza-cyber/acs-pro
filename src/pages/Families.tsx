@@ -3,26 +3,52 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Family, Address } from '../types';
-import { 
-  Users, 
-  Plus, 
-  Search, 
-  MapPin, 
-  Home, 
-  Save, 
-  X, 
+import {
+  Users,
+  Plus,
+  Search,
+  MapPin,
+  Home,
+  Save,
+  X,
   Trash2,
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
   WifiOff,
-  Edit2
+  Edit2,
+  Cloud
 } from 'lucide-react';
+
+// ============================================
+// FILA OFFLINE — famílias pendentes de sync
+// ============================================
+const OFFLINE_FAMILIES_KEY = 'offline_families_queue';
+
+function getOfflineFamiliesQueue(): Family[] {
+  try {
+    const raw = localStorage.getItem(OFFLINE_FAMILIES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function addToOfflineFamiliesQueue(family: Family) {
+  const queue = getOfflineFamiliesQueue();
+  const index = queue.findIndex(f => f.id === family.id);
+  if (index >= 0) queue[index] = family;
+  else queue.push(family);
+  localStorage.setItem(OFFLINE_FAMILIES_KEY, JSON.stringify(queue));
+}
+
+function removeFromOfflineFamiliesQueue(familyId: string) {
+  const queue = getOfflineFamiliesQueue().filter(f => f.id !== familyId);
+  localStorage.setItem(OFFLINE_FAMILIES_KEY, JSON.stringify(queue));
+}
 
 export const Families = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   const [families, setFamilies] = useState<Family[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -30,8 +56,8 @@ export const Families = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [pendingSync, setPendingSync] = useState(0);
 
-  // Estado do formulário
   const [formData, setFormData] = useState({
     familyNumber: '',
     street: '',
@@ -56,7 +82,7 @@ export const Families = () => {
   useEffect(() => {
     const handleOnline = () => {
       setIsOffline(false);
-      loadFamilies();
+      syncOfflineFamilies();
     };
     const handleOffline = () => setIsOffline(true);
 
@@ -69,6 +95,37 @@ export const Families = () => {
     };
   }, []);
 
+  // Atualizar contador de pendentes
+  useEffect(() => {
+    setPendingSync(getOfflineFamiliesQueue().length);
+  }, [families]);
+
+  // Sincronizar famílias offline
+  const syncOfflineFamilies = async () => {
+    const queue = getOfflineFamiliesQueue();
+    if (queue.length === 0) return;
+
+    console.log(`🔄 Sincronizando ${queue.length} família(s) offline...`);
+    let synced = 0;
+
+    for (const family of queue) {
+      try {
+        await api.saveFamily(family);
+        removeFromOfflineFamiliesQueue(family.id);
+        synced++;
+      } catch (error) {
+        console.error(`❌ Erro ao sincronizar família ${family.id}:`, error);
+      }
+    }
+
+    if (synced > 0) {
+      console.log(`✅ ${synced} família(s) sincronizada(s)`);
+      await loadFamilies();
+      setPendingSync(getOfflineFamiliesQueue().length);
+      alert(`✅ ${synced} família(s) sincronizada(s) com a nuvem!`);
+    }
+  };
+
   // Carregar famílias
   const loadFamilies = async () => {
     if (!user) return;
@@ -76,7 +133,7 @@ export const Families = () => {
     try {
       setIsLoading(true);
 
-      if (navigator.onLine && !isOffline) {
+      if (navigator.onLine) {
         const data = await api.getFamilies(user.id);
         setFamilies(data);
         localStorage.setItem(`families_cache_${user.id}`, JSON.stringify(data));
@@ -110,7 +167,7 @@ export const Families = () => {
   const filteredFamilies = useMemo(() => {
     if (!searchTerm) return families;
     const term = searchTerm.toLowerCase();
-    return families.filter(f => 
+    return families.filter(f =>
       f.familyNumber.toLowerCase().includes(term) ||
       f.address.street.toLowerCase().includes(term) ||
       f.address.neighborhood.toLowerCase().includes(term) ||
@@ -118,9 +175,10 @@ export const Families = () => {
     );
   }, [families, searchTerm]);
 
+  // GPS opcional — não bloqueia nada
   const captureLocation = () => {
     if (!navigator.geolocation) {
-      alert('Seu dispositivo não suporta GPS');
+      alert('Seu dispositivo não suporta GPS. O cadastro pode ser feito sem localização.');
       return;
     }
 
@@ -136,8 +194,9 @@ export const Families = () => {
       },
       () => {
         setIsCapturingLocation(false);
-        alert('Erro ao capturar GPS. Verifique as permissões.');
-      }
+        alert('Não foi possível capturar o GPS. O cadastro pode ser feito normalmente sem localização.');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
   };
 
@@ -187,17 +246,15 @@ export const Families = () => {
     setIsFormOpen(true);
   };
 
+  // ============================================
+  // SALVAR — funciona online e offline
+  // ============================================
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) return;
     if (!formData.familyNumber || !formData.street || !formData.number) {
       alert('Preencha os campos obrigatórios: Número da Família, Rua e Número');
-      return;
-    }
-
-    if (!navigator.onLine) {
-      alert('⚠️ Você precisa estar conectado à internet para salvar no banco de dados');
       return;
     }
 
@@ -231,25 +288,44 @@ export const Families = () => {
         notes: formData.notes || undefined
       };
 
-      await api.saveFamily(familyToSave);
-      await loadFamilies();
-      
+      if (navigator.onLine) {
+        await api.saveFamily(familyToSave);
+        await loadFamilies();
+        alert(editingFamily ? '✅ Família atualizada na nuvem!' : '✅ Família salva na nuvem!');
+      } else {
+        // Salvar offline
+        addToOfflineFamiliesQueue(familyToSave);
+        // Atualizar lista local
+        if (editingFamily) {
+          setFamilies(prev => prev.map(f => f.id === familyToSave.id ? familyToSave : f));
+        } else {
+          setFamilies(prev => [...prev, familyToSave]);
+        }
+        // Atualizar cache
+        const updated = editingFamily
+          ? families.map(f => f.id === familyToSave.id ? familyToSave : f)
+          : [...families, familyToSave];
+        localStorage.setItem(`families_cache_${user.id}`, JSON.stringify(updated));
+        setPendingSync(getOfflineFamiliesQueue().length);
+        alert(editingFamily
+          ? '✅ Família atualizada localmente! Será sincronizada quando houver internet.'
+          : '✅ Família salva localmente! Será sincronizada quando houver internet.');
+      }
+
       resetForm();
       setIsFormOpen(false);
-      
-      alert(editingFamily ? '✅ Família atualizada no banco de dados!' : '✅ Família salva no banco de dados na nuvem!');
 
     } catch (error) {
       console.error('Erro ao salvar família:', error);
-      alert('❌ Erro ao salvar família. Verifique sua conexão e tente novamente.');
+      alert('❌ Erro ao salvar família. Tente novamente.');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (familyId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta família do banco de dados?')) return;
-    
+    if (!confirm('Tem certeza que deseja excluir esta família?')) return;
+
     if (!navigator.onLine) {
       alert('⚠️ Você precisa estar conectado à internet para excluir do banco de dados');
       return;
@@ -258,7 +334,7 @@ export const Families = () => {
     try {
       await api.deleteFamily(familyId);
       await loadFamilies();
-      alert('✅ Família excluída do banco de dados!');
+      alert('✅ Família excluída!');
     } catch (error) {
       console.error('Erro ao excluir família:', error);
       alert('❌ Erro ao excluir família. Tente novamente.');
@@ -270,17 +346,16 @@ export const Families = () => {
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Carregando famílias do banco de dados...</p>
+          <p className="text-slate-600">Carregando famílias...</p>
         </div>
       </div>
     );
   }
 
-  // RENDERIZAÇÃO DO FORMULÁRIO
+  // ===== FORMULÁRIO =====
   if (isFormOpen) {
     return (
       <div className="max-w-4xl mx-auto">
-        {/* Header do Formulário */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 mb-6 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -290,7 +365,7 @@ export const Families = () => {
               <div>
                 <h1 className="text-2xl font-bold">{editingFamily ? 'Editar Família' : 'Nova Família'}</h1>
                 <p className="text-blue-100">
-                  {isOffline ? '⚠️ Offline - Conecte-se para salvar' : '☁️ Será salva no banco de dados na nuvem'}
+                  {isOffline ? '📱 Será salva localmente até ter internet' : '☁️ Será salva na nuvem'}
                 </p>
               </div>
             </div>
@@ -308,13 +383,13 @@ export const Families = () => {
             <WifiOff size={24} className="text-orange-600" />
             <div>
               <p className="font-semibold text-orange-800">Você está offline</p>
-              <p className="text-sm text-orange-700">Conecte-se à internet para salvar famílias no banco de dados</p>
+              <p className="text-sm text-orange-700">A família será salva localmente e sincronizada automaticamente quando houver internet.</p>
             </div>
           </div>
         )}
 
         <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-          
+
           {/* Identificação */}
           <div className="bg-slate-50 p-4 rounded-xl">
             <h3 className="font-bold text-slate-800 mb-4 flex items-center">
@@ -330,7 +405,7 @@ export const Families = () => {
                   type="text"
                   required
                   value={formData.familyNumber}
-                  onChange={(e) => setFormData({...formData, familyNumber: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, familyNumber: e.target.value })}
                   className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
                   placeholder="Ex: 001, 002, 003..."
                 />
@@ -342,7 +417,7 @@ export const Families = () => {
                 <input
                   type="number"
                   value={formData.householdIncome}
-                  onChange={(e) => setFormData({...formData, householdIncome: parseFloat(e.target.value) || 0})}
+                  onChange={(e) => setFormData({ ...formData, householdIncome: parseFloat(e.target.value) || 0 })}
                   className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
                   placeholder="0.00"
                   step="0.01"
@@ -367,7 +442,7 @@ export const Families = () => {
                     type="text"
                     required
                     value={formData.street}
-                    onChange={(e) => setFormData({...formData, street: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
                     placeholder="Nome da rua ou avenida"
                   />
@@ -380,7 +455,7 @@ export const Families = () => {
                     type="text"
                     required
                     value={formData.number}
-                    onChange={(e) => setFormData({...formData, number: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, number: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
                     placeholder="123"
                   />
@@ -395,7 +470,7 @@ export const Families = () => {
                   <input
                     type="text"
                     value={formData.complement}
-                    onChange={(e) => setFormData({...formData, complement: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, complement: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
                     placeholder="Apto, Bloco, Casa..."
                   />
@@ -407,7 +482,7 @@ export const Families = () => {
                   <input
                     type="text"
                     value={formData.neighborhood}
-                    onChange={(e) => setFormData({...formData, neighborhood: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
                     placeholder="Nome do bairro"
                   />
@@ -419,26 +494,26 @@ export const Families = () => {
                   <input
                     type="text"
                     value={formData.zipCode}
-                    onChange={(e) => setFormData({...formData, zipCode: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
                     placeholder="00000-000"
                   />
                 </div>
               </div>
 
-              {/* GPS */}
+              {/* GPS — 100% OPCIONAL */}
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <MapPin size={24} className="text-blue-600" />
                     <div>
-                      <p className="font-semibold text-slate-800">Localização GPS</p>
+                      <p className="font-semibold text-slate-800">Localização GPS <span className="text-xs text-slate-500 font-normal">(opcional)</span></p>
                       {location.latitude ? (
                         <p className="text-sm text-green-600">
                           ✓ Capturada: {location.latitude.toFixed(6)}, {location.longitude?.toFixed(6)}
                         </p>
                       ) : (
-                        <p className="text-sm text-slate-600">Clique para capturar a localização exata</p>
+                        <p className="text-sm text-slate-600">Capturar localização é opcional</p>
                       )}
                     </div>
                   </div>
@@ -478,7 +553,7 @@ export const Families = () => {
                 </label>
                 <select
                   value={formData.dwellingType}
-                  onChange={(e) => setFormData({...formData, dwellingType: e.target.value as any})}
+                  onChange={(e) => setFormData({ ...formData, dwellingType: e.target.value as any })}
                   className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none bg-white"
                 >
                   <option value="HOUSE">Casa</option>
@@ -493,7 +568,7 @@ export const Families = () => {
                   <input
                     type="checkbox"
                     checked={formData.hasBasicSanitation}
-                    onChange={(e) => setFormData({...formData, hasBasicSanitation: e.target.checked})}
+                    onChange={(e) => setFormData({ ...formData, hasBasicSanitation: e.target.checked })}
                     className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                   />
                   <span className="text-sm font-medium text-slate-700">Saneamento Básico</span>
@@ -503,7 +578,7 @@ export const Families = () => {
                   <input
                     type="checkbox"
                     checked={formData.hasRunningWater}
-                    onChange={(e) => setFormData({...formData, hasRunningWater: e.target.checked})}
+                    onChange={(e) => setFormData({ ...formData, hasRunningWater: e.target.checked })}
                     className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                   />
                   <span className="text-sm font-medium text-slate-700">Água Encanada</span>
@@ -513,7 +588,7 @@ export const Families = () => {
                   <input
                     type="checkbox"
                     checked={formData.hasElectricity}
-                    onChange={(e) => setFormData({...formData, hasElectricity: e.target.checked})}
+                    onChange={(e) => setFormData({ ...formData, hasElectricity: e.target.checked })}
                     className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                   />
                   <span className="text-sm font-medium text-slate-700">Energia Elétrica</span>
@@ -529,7 +604,7 @@ export const Families = () => {
             </label>
             <textarea
               value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none resize-none"
               placeholder="Informações adicionais sobre a família, condições especiais, etc."
@@ -548,13 +623,13 @@ export const Families = () => {
             </button>
             <button
               type="submit"
-              disabled={isSaving || isOffline}
+              disabled={isSaving}
               className="flex-1 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? (
                 <>
                   <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                  <span>Salvando na nuvem...</span>
+                  <span>Salvando...</span>
                 </>
               ) : (
                 <>
@@ -569,28 +644,31 @@ export const Families = () => {
     );
   }
 
-  // RENDERIZAÇÃO DA LISTA
+  // ===== LISTA =====
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-800 mb-2">Famílias Cadastradas</h1>
           <p className="text-slate-600">
-            {families.length} {families.length === 1 ? 'família' : 'famílias'} no banco de dados na nuvem
+            {families.length} {families.length === 1 ? 'família' : 'famílias'}
+            {isOffline ? (
+              <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">📱 Offline</span>
+            ) : (
+              <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">☁️ Nuvem</span>
+            )}
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          {isOffline && (
-            <div className="flex items-center text-orange-600 text-sm bg-orange-50 border border-orange-200 rounded-xl px-3 py-2">
-              <WifiOff size={16} className="mr-2" />
-              Offline (cache local)
-            </div>
+          {pendingSync > 0 && (
+            <button onClick={syncOfflineFamilies} disabled={isOffline}
+              className="bg-orange-50 text-orange-700 px-4 py-2 rounded-xl border border-orange-200 font-semibold hover:bg-orange-100 flex items-center space-x-2 text-sm disabled:opacity-50">
+              <Cloud size={18} /><span>{pendingSync} pendente(s)</span>
+            </button>
           )}
           <button
             onClick={loadFamilies}
-            disabled={isOffline}
-            className="bg-white px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 flex items-center space-x-2 disabled:opacity-50"
+            className="bg-white px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 flex items-center space-x-2"
           >
             <RefreshCw size={18} />
             <span>Atualizar</span>
@@ -619,7 +697,7 @@ export const Families = () => {
         </div>
       </div>
 
-      {/* Lista de Famílias */}
+      {/* Lista */}
       {filteredFamilies.length === 0 ? (
         <div className="bg-white p-12 rounded-2xl border-2 border-dashed border-slate-300 text-center">
           <div className="bg-slate-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -629,9 +707,9 @@ export const Families = () => {
             {searchTerm ? 'Nenhuma família encontrada' : 'Nenhuma família cadastrada ainda'}
           </h3>
           <p className="text-slate-600 mb-6 max-w-md mx-auto">
-            {searchTerm 
-              ? 'Tente buscar por outros termos como número da família ou nome da rua' 
-              : 'Comece cadastrando a primeira família da sua microárea. O cadastro será salvo no banco de dados na nuvem.'
+            {searchTerm
+              ? 'Tente buscar por outros termos como número da família ou nome da rua'
+              : 'Comece cadastrando a primeira família da sua microárea.'
             }
           </p>
           {!searchTerm && (
@@ -647,13 +725,8 @@ export const Families = () => {
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredFamilies.map(family => {
-            const allPeople = JSON.parse(localStorage.getItem('acs_people') || '[]');
-            const familyMembers = allPeople.filter((p: any) => p.familyId === family.id);
-            const memberCount = familyMembers.length;
-            
             return (
               <div key={family.id} className="bg-white p-6 rounded-xl border-2 border-slate-200 hover:border-blue-300 hover:shadow-md transition-all group flex flex-col">
-                {/* Cabeçalho do Card */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
                     <div className="bg-blue-100 p-3 rounded-lg group-hover:scale-110 transition-transform">
@@ -662,7 +735,7 @@ export const Families = () => {
                     <div>
                       <h3 className="font-bold text-lg text-slate-800">Família {family.familyNumber}</h3>
                       <p className="text-sm text-slate-500">
-                        Salva na nuvem em {new Date(family.registeredAt).toLocaleDateString('pt-BR')}
+                        {new Date(family.registeredAt).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                   </div>
@@ -684,7 +757,6 @@ export const Families = () => {
                   </div>
                 </div>
 
-                {/* Endereço */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-start space-x-2">
                     <MapPin size={16} className="text-slate-400 mt-1 flex-shrink-0" />
@@ -700,41 +772,34 @@ export const Families = () => {
                   </div>
                 </div>
 
-                {/* Tags de Condições */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {family.hasBasicSanitation ? (
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium flex items-center">
-                      <CheckCircle2 size={12} className="mr-1" />
-                      Saneamento
+                      <CheckCircle2 size={12} className="mr-1" />Saneamento
                     </span>
                   ) : (
                     <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium flex items-center">
-                      <AlertTriangle size={12} className="mr-1" />
-                      Sem saneamento
+                      <AlertTriangle size={12} className="mr-1" />Sem saneamento
                     </span>
                   )}
-                  
+
                   {family.hasRunningWater ? (
                     <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium flex items-center">
-                      <CheckCircle2 size={12} className="mr-1" />
-                      Água
+                      <CheckCircle2 size={12} className="mr-1" />Água
                     </span>
                   ) : (
                     <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium flex items-center">
-                      <AlertTriangle size={12} className="mr-1" />
-                      Sem água
+                      <AlertTriangle size={12} className="mr-1" />Sem água
                     </span>
                   )}
 
                   {family.hasElectricity ? (
                     <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-medium flex items-center">
-                      <CheckCircle2 size={12} className="mr-1" />
-                      Energia
+                      <CheckCircle2 size={12} className="mr-1" />Energia
                     </span>
                   ) : (
                     <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium flex items-center">
-                      <AlertTriangle size={12} className="mr-1" />
-                      Sem energia
+                      <AlertTriangle size={12} className="mr-1" />Sem energia
                     </span>
                   )}
 
@@ -745,7 +810,6 @@ export const Families = () => {
                   )}
                 </div>
 
-                {/* BOTÃO VER MEMBROS */}
                 <div className="mt-auto pt-4 border-t border-slate-200">
                   <button
                     onClick={() => navigate(`/families/${family.id}`)}
@@ -753,11 +817,6 @@ export const Families = () => {
                   >
                     <Users size={18} />
                     <span>Ver Membros da Família</span>
-                    {memberCount > 0 && (
-                      <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">
-                        {memberCount}
-                      </span>
-                    )}
                   </button>
                 </div>
               </div>

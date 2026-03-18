@@ -13,24 +13,48 @@ import {
   XCircle,
   Clock,
   AlertCircle,
-  Navigation,
   Filter,
   Search,
   Home,
   User,
   RefreshCw,
-  Edit3,
-  Edit2
+  Edit2,
+  WifiOff,
+  Cloud
 } from 'lucide-react';
 
 type FilterTab = 'TODAY' | 'PENDING' | 'OVERDUE' | 'COMPLETED' | 'ALL';
-type LocationMode = 'GPS' | 'MANUAL' | null;
 
 const startOfDay = (d: Date) => {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
   return x;
 };
+
+// ============================================
+// FILA OFFLINE — visitas pendentes de sync
+// ============================================
+const OFFLINE_VISITS_KEY = 'offline_visits_queue';
+
+function getOfflineQueue(): Visit[] {
+  try {
+    const raw = localStorage.getItem(OFFLINE_VISITS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function addToOfflineQueue(visit: Visit) {
+  const queue = getOfflineQueue();
+  const index = queue.findIndex(v => v.id === visit.id);
+  if (index >= 0) queue[index] = visit;
+  else queue.push(visit);
+  localStorage.setItem(OFFLINE_VISITS_KEY, JSON.stringify(queue));
+}
+
+function removeFromOfflineQueue(visitId: string) {
+  const queue = getOfflineQueue().filter(v => v.id !== visitId);
+  localStorage.setItem(OFFLINE_VISITS_KEY, JSON.stringify(queue));
+}
 
 export const Visits = () => {
   const { user } = useAuth();
@@ -44,6 +68,8 @@ export const Visits = () => {
   const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
   const [isCompletingVisit, setIsCompletingVisit] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [pendingSync, setPendingSync] = useState(0);
 
   const [formData, setFormData] = useState({
     familyId: '',
@@ -61,26 +87,85 @@ export const Visits = () => {
     agentNotes: '',
   });
 
-  const [location, setLocation] = useState<{ latitude?: number; longitude?: number }>({});
-  const [isCapturingLocation, setIsCapturingLocation] = useState(false);
-  const [locationMode, setLocationMode] = useState<LocationMode>(null);
-  const [manualAddress, setManualAddress] = useState('');
-  const [gpsError, setGpsError] = useState('');
-
   const today = startOfDay(new Date());
+
+  // Monitor de conectividade
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      syncOfflineVisits();
+    };
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Atualizar contador de pendentes
+  useEffect(() => {
+    setPendingSync(getOfflineQueue().length);
+  }, [visits]);
+
+  // Sincronizar visitas offline quando voltar a conexão
+  const syncOfflineVisits = async () => {
+    const queue = getOfflineQueue();
+    if (queue.length === 0) return;
+
+    console.log(`🔄 Sincronizando ${queue.length} visita(s) offline...`);
+    let synced = 0;
+
+    for (const visit of queue) {
+      try {
+        await api.saveVisit(visit);
+        removeFromOfflineQueue(visit.id);
+        synced++;
+      } catch (error) {
+        console.error(`❌ Erro ao sincronizar visita ${visit.id}:`, error);
+      }
+    }
+
+    if (synced > 0) {
+      console.log(`✅ ${synced} visita(s) sincronizada(s)`);
+      await loadData();
+      setPendingSync(getOfflineQueue().length);
+      alert(`✅ ${synced} visita(s) sincronizada(s) com a nuvem!`);
+    }
+  };
 
   const loadData = async () => {
     if (!user) return;
     try {
       setIsLoading(true);
-      const [visitsData, familiesData] = await Promise.all([
-        api.getVisits(user.id),
-        api.getFamilies(user.id),
-      ]);
-      setVisits(visitsData);
-      setFamilies(familiesData);
+
+      if (navigator.onLine) {
+        const [visitsData, familiesData] = await Promise.all([
+          api.getVisits(user.id),
+          api.getFamilies(user.id),
+        ]);
+        setVisits(visitsData);
+        setFamilies(familiesData);
+        // Cache para uso offline
+        localStorage.setItem(`visits_cache_${user.id}`, JSON.stringify(visitsData));
+        localStorage.setItem(`families_cache_${user.id}`, JSON.stringify(familiesData));
+      } else {
+        // Carregar do cache
+        const cachedVisits = localStorage.getItem(`visits_cache_${user.id}`);
+        const cachedFamilies = localStorage.getItem(`families_cache_${user.id}`);
+        if (cachedVisits) setVisits(JSON.parse(cachedVisits));
+        if (cachedFamilies) setFamilies(JSON.parse(cachedFamilies));
+      }
     } catch (error) {
       console.error('❌ Erro ao carregar dados:', error);
+      // Fallback para cache
+      const cachedVisits = localStorage.getItem(`visits_cache_${user.id}`);
+      const cachedFamilies = localStorage.getItem(`families_cache_${user.id}`);
+      if (cachedVisits) setVisits(JSON.parse(cachedVisits));
+      if (cachedFamilies) setFamilies(JSON.parse(cachedFamilies));
     } finally {
       setIsLoading(false);
     }
@@ -126,50 +211,6 @@ export const Visits = () => {
     return { total: visits.length, pending: pending.length, overdue: overdue.length, today: todayVisits.length, completed: completed.length, completedThisMonth: completedThisMonth.length };
   }, [visits, today]);
 
-  const captureLocation = () => {
-    if (!navigator.geolocation) { setGpsError('Seu dispositivo não suporta GPS. Use a localização manual.'); setLocationMode('MANUAL'); return; }
-    setIsCapturingLocation(true); setGpsError('');
-    navigator.geolocation.getCurrentPosition(
-      position => { setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude }); setIsCapturingLocation(false); setLocationMode('GPS'); setGpsError(''); },
-      error => {
-        setIsCapturingLocation(false);
-        let errorMsg = '';
-        switch (error.code) {
-          case error.PERMISSION_DENIED: errorMsg = 'Permissão de localização negada. Use a opção manual abaixo.'; break;
-          case error.POSITION_UNAVAILABLE: errorMsg = 'Localização indisponível. Use a opção manual abaixo.'; break;
-          case error.TIMEOUT: errorMsg = 'Tempo esgotado ao buscar GPS. Use a opção manual abaixo.'; break;
-          default: errorMsg = 'Erro ao capturar GPS. Use a opção manual abaixo.';
-        }
-        setGpsError(errorMsg);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
-    );
-  };
-
-  const handleUseManualLocation = () => { setLocationMode('MANUAL'); setGpsError(''); };
-
-  const handleUseFamilyAddress = (visitId: string) => {
-    const visit = visits.find(v => v.id === visitId);
-    if (!visit) return;
-    const family = families.find(f => f.id === visit.familyId);
-    if (!family) return;
-    if (family.address.latitude && family.address.longitude) {
-      setLocation({ latitude: family.address.latitude, longitude: family.address.longitude });
-      setLocationMode('MANUAL');
-      setManualAddress(`${family.address.street}, ${family.address.number} - ${family.address.neighborhood}, ${family.address.city}`);
-    } else {
-      setLocationMode('MANUAL');
-      setManualAddress(`${family.address.street}, ${family.address.number} - ${family.address.neighborhood}, ${family.address.city}`);
-      setLocation({ latitude: 0, longitude: 0 });
-    }
-  };
-
-  const isLocationReady = (): boolean => {
-    if (locationMode === 'GPS' && location.latitude && location.latitude !== 0) return true;
-    if (locationMode === 'MANUAL' && manualAddress.trim().length > 5) return true;
-    return false;
-  };
-
   const resetFormAndClose = () => {
     setFormData({ familyId: '', scheduledDate: new Date().toISOString().split('T')[0], scheduledTime: '09:00', priority: PriorityLevel.MEDIUM, observations: '' });
     setEditingVisit(null);
@@ -189,6 +230,9 @@ export const Visits = () => {
     setIsFormOpen(true);
   };
 
+  // ============================================
+  // AGENDAR / EDITAR — funciona offline
+  // ============================================
   const handleScheduleVisit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !formData.familyId) { alert('⚠️ Selecione uma família'); return; }
@@ -207,45 +251,81 @@ export const Visits = () => {
         updatedAt: new Date().toISOString(),
         needsSync: false,
       };
-      await api.saveVisit(visitToSave);
-      await loadData();
+
+      if (navigator.onLine) {
+        await api.saveVisit(visitToSave);
+        await loadData();
+        alert(editingVisit ? '✅ Visita atualizada!' : '✅ Visita agendada na nuvem!');
+      } else {
+        // Salvar offline
+        addToOfflineQueue(visitToSave);
+        // Atualizar lista local
+        if (editingVisit) {
+          setVisits(prev => prev.map(v => v.id === visitToSave.id ? visitToSave : v));
+        } else {
+          setVisits(prev => [...prev, visitToSave]);
+        }
+        // Atualizar cache
+        const updated = editingVisit
+          ? visits.map(v => v.id === visitToSave.id ? visitToSave : v)
+          : [...visits, visitToSave];
+        localStorage.setItem(`visits_cache_${user.id}`, JSON.stringify(updated));
+        setPendingSync(getOfflineQueue().length);
+        alert(editingVisit ? '✅ Visita atualizada localmente! Será sincronizada quando houver internet.' : '✅ Visita agendada localmente! Será sincronizada quando houver internet.');
+      }
+
       resetFormAndClose();
-      alert(editingVisit ? '✅ Visita atualizada com sucesso!' : '✅ Visita agendada na nuvem com sucesso!');
     } catch (error) {
       console.error('❌ Erro ao salvar visita:', error);
-      alert('❌ Erro ao salvar visita. Verifique sua conexão.');
+      alert('❌ Erro ao salvar visita. Tente novamente.');
     } finally {
       setIsSaving(false);
     }
   };
 
+  // ============================================
+  // FINALIZAR VISITA — funciona offline, sem GPS obrigatório
+  // ============================================
   const handleCompleteVisit = async (visitId: string) => {
-    if (!isLocationReady()) { alert('⚠️ Informe a localização (GPS ou manual) antes de finalizar a visita.'); return; }
     const visit = visits.find(v => v.id === visitId);
     if (!visit) return;
     try {
       setIsSaving(true);
       let finalObservations = completionData.observations || visit.observations || '';
-      if (completionData.agentNotes) finalObservations = `${finalObservations}\n\n[Informações do Agente: ${completionData.agentNotes}]`;
-      if (locationMode === 'MANUAL' && manualAddress) finalObservations = `[Localização manual: ${manualAddress}]\n${finalObservations}`;
+      if (completionData.agentNotes) {
+        finalObservations = `${finalObservations}\n\n[Informações do Agente: ${completionData.agentNotes}]`;
+      }
+
       const updatedVisit: Visit = {
-        ...visit, status: VisitStatus.COMPLETED, completedDate: new Date().toISOString(),
-        latitude: location.latitude || undefined, longitude: location.longitude || undefined,
+        ...visit,
+        status: VisitStatus.COMPLETED,
+        completedDate: new Date().toISOString(),
         observations: finalObservations,
         orientationsGiven: completionData.orientationsGiven ? completionData.orientationsGiven.split('\n').filter(o => o.trim()) : undefined,
         healthIssuesIdentified: completionData.healthIssuesIdentified ? completionData.healthIssuesIdentified.split('\n').filter(h => h.trim()) : undefined,
         referralsNeeded: completionData.referralsNeeded ? completionData.referralsNeeded.split('\n').filter(r => r.trim()) : undefined,
         updatedAt: new Date().toISOString(),
       };
-      await api.saveVisit(updatedVisit);
-      await loadData();
+
+      if (navigator.onLine) {
+        await api.saveVisit(updatedVisit);
+        await loadData();
+        alert('✅ Visita finalizada e salva na nuvem!');
+      } else {
+        // Salvar offline
+        addToOfflineQueue(updatedVisit);
+        setVisits(prev => prev.map(v => v.id === updatedVisit.id ? updatedVisit : v));
+        const updated = visits.map(v => v.id === updatedVisit.id ? updatedVisit : v);
+        localStorage.setItem(`visits_cache_${user!.id}`, JSON.stringify(updated));
+        setPendingSync(getOfflineQueue().length);
+        alert('✅ Visita finalizada localmente! Será sincronizada quando houver internet.');
+      }
+
       setIsCompletingVisit(null);
       setCompletionData({ observations: '', orientationsGiven: '', healthIssuesIdentified: '', referralsNeeded: '', agentNotes: '' });
-      setLocation({}); setLocationMode(null); setManualAddress(''); setGpsError('');
-      alert('✅ Visita finalizada e salva na nuvem!');
     } catch (error) {
       console.error('❌ Erro ao finalizar visita:', error);
-      alert('❌ Erro ao finalizar visita. Verifique sua conexão.');
+      alert('❌ Erro ao finalizar visita. Tente novamente.');
     } finally {
       setIsSaving(false);
     }
@@ -257,8 +337,15 @@ export const Visits = () => {
     if (!visit) return;
     try {
       const updatedVisit: Visit = { ...visit, status: VisitStatus.CANCELLED, updatedAt: new Date().toISOString() };
-      await api.saveVisit(updatedVisit);
-      await loadData();
+
+      if (navigator.onLine) {
+        await api.saveVisit(updatedVisit);
+        await loadData();
+      } else {
+        addToOfflineQueue(updatedVisit);
+        setVisits(prev => prev.map(v => v.id === updatedVisit.id ? updatedVisit : v));
+        setPendingSync(getOfflineQueue().length);
+      }
       alert('✅ Visita cancelada');
     } catch (error) {
       console.error('❌ Erro ao cancelar visita:', error);
@@ -292,13 +379,13 @@ export const Visits = () => {
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Carregando visitas do banco de dados...</p>
+          <p className="text-slate-600">Carregando visitas...</p>
         </div>
       </div>
     );
   }
 
-  // ===== FORMULÁRIO DE CONCLUSÃO =====
+  // ===== FORMULÁRIO DE CONCLUSÃO (SEM GPS OBRIGATÓRIO) =====
   if (isCompletingVisit) {
     const visit = visits.find(v => v.id === isCompletingVisit);
     const family = families.find(f => f.id === visit?.familyId);
@@ -310,53 +397,28 @@ export const Visits = () => {
               <div className="bg-white/20 p-3 rounded-xl"><CheckCircle2 size={28} /></div>
               <div>
                 <h1 className="text-2xl font-bold">Finalizar Visita</h1>
-                <p className="text-green-100">Família {family?.familyNumber} - {family?.address.street}, {family?.address.number} • ☁️ Salva na nuvem</p>
+                <p className="text-green-100">
+                  Família {family?.familyNumber} - {family?.address.street}, {family?.address.number}
+                  {isOffline ? ' • 📱 Modo offline' : ' • ☁️ Salva na nuvem'}
+                </p>
               </div>
             </div>
-            <button onClick={() => { setIsCompletingVisit(null); setLocation({}); setLocationMode(null); setManualAddress(''); setGpsError(''); }}
+            <button onClick={() => { setIsCompletingVisit(null); }}
               className="p-2 hover:bg-white/20 rounded-xl transition-colors" disabled={isSaving}><X size={24} /></button>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-          <div className={`p-4 rounded-xl border-2 ${isLocationReady() ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                <Navigation size={24} className={isLocationReady() ? 'text-green-600' : 'text-orange-600'} />
-                <div>
-                  <p className="font-semibold text-slate-800">Localização da Visita</p>
-                  {isLocationReady() ? (
-                    <p className="text-sm text-green-600">✓ {locationMode === 'GPS' ? `GPS capturado: ${location.latitude?.toFixed(6)}, ${location.longitude?.toFixed(6)}` : `Endereço manual: ${manualAddress}`}</p>
-                  ) : (<p className="text-sm text-orange-600">Escolha uma das opções abaixo para registrar a localização</p>)}
-                </div>
-              </div>
+        {isOffline && (
+          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-4 mb-6 flex items-center space-x-3">
+            <WifiOff size={24} className="text-orange-600" />
+            <div>
+              <p className="font-semibold text-orange-800">Você está offline</p>
+              <p className="text-sm text-orange-700">A visita será salva localmente e sincronizada quando houver internet.</p>
             </div>
-            {gpsError && (<div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2"><AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" /><span className="text-red-700 text-sm">{gpsError}</span></div>)}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button type="button" onClick={captureLocation} disabled={isCapturingLocation || isSaving}
-                className={`p-3 rounded-lg font-semibold flex flex-col items-center gap-2 text-sm transition-all border-2 ${locationMode === 'GPS' ? 'bg-green-100 border-green-400 text-green-800' : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50'} disabled:opacity-50`}>
-                {isCapturingLocation ? (<><div className="animate-spin h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full" /><span>Capturando...</span></>) : (<><Navigation size={24} /><span>GPS Automático</span><span className="text-xs text-slate-500 font-normal">Usar localização do dispositivo</span></>)}
-              </button>
-              <button type="button" onClick={() => handleUseFamilyAddress(isCompletingVisit)} disabled={isSaving}
-                className={`p-3 rounded-lg font-semibold flex flex-col items-center gap-2 text-sm transition-all border-2 ${locationMode === 'MANUAL' && manualAddress.includes(family?.address.street || '___') ? 'bg-green-100 border-green-400 text-green-800' : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50'} disabled:opacity-50`}>
-                <Home size={24} /><span>Endereço da Família</span><span className="text-xs text-slate-500 font-normal">Usar endereço cadastrado</span>
-              </button>
-              <button type="button" onClick={handleUseManualLocation} disabled={isSaving}
-                className={`p-3 rounded-lg font-semibold flex flex-col items-center gap-2 text-sm transition-all border-2 ${locationMode === 'MANUAL' && !manualAddress.includes(family?.address.street || '___') ? 'bg-green-100 border-green-400 text-green-800' : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50'} disabled:opacity-50`}>
-                <Edit3 size={24} /><span>Digitar Endereço</span><span className="text-xs text-slate-500 font-normal">Informar localização manualmente</span>
-              </button>
-            </div>
-            {locationMode === 'MANUAL' && (
-              <div className="mt-4">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Endereço / Localização da Visita *</label>
-                <input type="text" value={manualAddress} onChange={e => { setManualAddress(e.target.value); if (!location.latitude) setLocation({ latitude: 0, longitude: 0 }); }}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
-                  placeholder="Ex: Rua das Flores, 123 - Centro, São Paulo" disabled={isSaving} />
-                <p className="text-xs text-slate-500 mt-1">Informe o endereço onde a visita foi realizada (mínimo 6 caracteres)</p>
-              </div>
-            )}
           </div>
+        )}
 
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Observações da Visita</label>
             <textarea value={completionData.observations} onChange={e => setCompletionData({ ...completionData, observations: e.target.value })}
@@ -387,22 +449,23 @@ export const Visits = () => {
             <textarea value={completionData.agentNotes} onChange={e => setCompletionData({ ...completionData, agentNotes: e.target.value })}
               rows={4} className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none resize-none"
               placeholder={"Espaço livre para anotações do agente:\n- Informações relevantes sobre a família\n- Lembretes para próxima visita"} disabled={isSaving} />
-            <p className="text-xs text-slate-500 mt-1">Use este campo para registrar qualquer informação adicional que considerar importante</p>
+            <p className="text-xs text-slate-500 mt-1">Use este campo para registrar qualquer informação adicional</p>
           </div>
 
           <div className="flex space-x-4 pt-4 border-t border-slate-200">
-            <button type="button" onClick={() => { setIsCompletingVisit(null); setLocation({}); setLocationMode(null); setManualAddress(''); setGpsError(''); }}
+            <button type="button" onClick={() => { setIsCompletingVisit(null); }}
               className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors" disabled={isSaving}>Cancelar</button>
-            <button type="button" onClick={() => handleCompleteVisit(isCompletingVisit)} disabled={!isLocationReady() || isSaving}
+            <button type="button" onClick={() => handleCompleteVisit(isCompletingVisit)} disabled={isSaving}
               className="flex-1 px-6 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-              {isSaving ? (<><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /><span>Salvando na nuvem...</span></>) : (<><CheckCircle2 size={20} /><span>Finalizar Visita</span></>)}
+              {isSaving ? (<><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /><span>Salvando...</span></>) : (<><CheckCircle2 size={20} /><span>Finalizar Visita</span></>)}
             </button>
           </div>
         </div>
       </div>
     );
   }
-    // ===== FORMULÁRIO DE AGENDAMENTO / EDIÇÃO =====
+
+  // ===== FORMULÁRIO DE AGENDAMENTO / EDIÇÃO =====
   if (isFormOpen) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -414,7 +477,9 @@ export const Visits = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">{editingVisit ? 'Editar Visita' : 'Agendar Nova Visita'}</h1>
-                <p className={editingVisit ? 'text-orange-100' : 'text-blue-100'}>☁️ Será salva no banco de dados na nuvem</p>
+                <p className={editingVisit ? 'text-orange-100' : 'text-blue-100'}>
+                  {isOffline ? '📱 Será salva localmente até ter internet' : '☁️ Será salva na nuvem'}
+                </p>
               </div>
             </div>
             <button onClick={resetFormAndClose} className="p-2 hover:bg-white/20 rounded-xl transition-colors" disabled={isSaving}>
@@ -422,6 +487,16 @@ export const Visits = () => {
             </button>
           </div>
         </div>
+
+        {isOffline && (
+          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-4 mb-6 flex items-center space-x-3">
+            <WifiOff size={24} className="text-orange-600" />
+            <div>
+              <p className="font-semibold text-orange-800">Você está offline</p>
+              <p className="text-sm text-orange-700">A visita será salva localmente e sincronizada automaticamente.</p>
+            </div>
+          </div>
+        )}
 
         {families.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
@@ -486,7 +561,7 @@ export const Visits = () => {
               <button type="submit" disabled={isSaving}
                 className={`flex-1 px-6 py-3 ${editingVisit ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-semibold rounded-xl transition-colors flex items-center justify-center space-x-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed`}>
                 {isSaving ? (
-                  <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /><span>{editingVisit ? 'Atualizando...' : 'Agendando na nuvem...'}</span></>
+                  <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /><span>{editingVisit ? 'Atualizando...' : 'Agendando...'}</span></>
                 ) : (
                   <><Save size={20} /><span>{editingVisit ? 'Atualizar Visita' : 'Agendar Visita'}</span></>
                 )}
@@ -506,10 +581,20 @@ export const Visits = () => {
           <h1 className="text-3xl font-bold text-slate-800 mb-2">Visitas Domiciliares</h1>
           <p className="text-slate-600">
             {stats.total} {stats.total === 1 ? 'visita registrada' : 'visitas registradas'} • {stats.pending} pendentes
-            <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">☁️ Dados na nuvem</span>
+            {isOffline ? (
+              <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">📱 Offline</span>
+            ) : (
+              <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">☁️ Nuvem</span>
+            )}
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          {pendingSync > 0 && (
+            <button onClick={syncOfflineVisits} disabled={isOffline}
+              className="bg-orange-50 text-orange-700 px-4 py-2 rounded-xl border border-orange-200 font-semibold hover:bg-orange-100 flex items-center space-x-2 text-sm disabled:opacity-50">
+              <Cloud size={18} /><span>{pendingSync} pendente(s)</span>
+            </button>
+          )}
           <button onClick={loadData} className="bg-white px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 flex items-center space-x-2">
             <RefreshCw size={18} /><span>Atualizar</span>
           </button>
@@ -634,14 +719,13 @@ export const Visits = () => {
                     </div>
                   </div>
 
-                  {/* Ações — Editar, Finalizar, Cancelar */}
                   {visit.status === VisitStatus.PENDING && (
                     <div className="flex flex-col space-y-2 ml-4">
                       <button onClick={() => handleEditVisit(visit)}
                         className="bg-orange-50 text-orange-600 px-4 py-2 rounded-lg font-semibold hover:bg-orange-100 flex items-center space-x-2 text-sm border border-orange-200">
                         <Edit2 size={16} /><span>Editar</span>
                       </button>
-                      <button onClick={() => { setIsCompletingVisit(visit.id); setLocationMode(null); setLocation({}); setManualAddress(''); setGpsError(''); captureLocation(); }}
+                      <button onClick={() => { setIsCompletingVisit(visit.id); }}
                         className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 flex items-center space-x-2 text-sm shadow-sm">
                         <CheckCircle2 size={16} /><span>Finalizar</span>
                       </button>

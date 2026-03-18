@@ -114,10 +114,38 @@ const Notifications: React.FC = () => {
     setTimeout(() => setMessage(''), 3000);
   };
 
+  // ============================================
+  // CORREÇÃO: navegar para a entidade específica
+  // ============================================
   const handleClickNotification = (notification: NotificationItem) => {
     if (!notification.is_read) {
       handleMarkAsRead(notification.id);
     }
+
+    const entityId = notification.related_entity_id;
+    const entityType = notification.related_entity_type;
+
+    // Navegar para a entidade específica
+    if (entityId && entityType === 'family') {
+      navigate(`/families/${entityId}`);
+      return;
+    }
+    if (entityId && entityType === 'person') {
+      // Pessoa: navegar para a família dela (o entityId é o person.id,
+      // mas precisamos do familyId — como fallback, vamos para /families)
+      navigate('/families');
+      return;
+    }
+    if (entityId && entityType === 'visit') {
+      navigate('/visits');
+      return;
+    }
+    if (entityId && entityType === 'user') {
+      navigate('/admin');
+      return;
+    }
+
+    // Fallback: usa action_url se existir
     if (notification.action_url) {
       navigate(notification.action_url);
     }
@@ -127,7 +155,6 @@ const Notifications: React.FC = () => {
   const filteredNotifications = useMemo(() => {
     let filtered = [...notifications];
 
-    // Filtro por aba
     switch (activeFilter) {
       case 'UNREAD':
         filtered = filtered.filter((n) => !n.is_read);
@@ -152,7 +179,6 @@ const Notifications: React.FC = () => {
         break;
     }
 
-    // Filtro por busca
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -165,7 +191,6 @@ const Notifications: React.FC = () => {
     return filtered;
   }, [notifications, activeFilter, searchTerm]);
 
-  // Contadores
   const counts = useMemo(() => {
     return {
       all: notifications.length,
@@ -236,7 +261,6 @@ const Notifications: React.FC = () => {
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
-  // Agrupar por data
   const groupedNotifications = useMemo(() => {
     const groups: { [key: string]: NotificationItem[] } = {};
     const today = new Date().toISOString().split('T')[0];
@@ -308,7 +332,6 @@ const Notifications: React.FC = () => {
           </button>
         </div>
 
-        {/* Estatísticas rápidas */}
         <div className="grid grid-cols-3 gap-3 mt-4">
           <div className="bg-white/10 rounded-lg p-3 text-center">
             <p className="text-2xl font-bold">{counts.unread}</p>
@@ -325,7 +348,6 @@ const Notifications: React.FC = () => {
         </div>
       </div>
 
-      {/* Mensagem de feedback */}
       {message && (
         <div className={`p-3 rounded-lg text-sm font-medium ${
           message.startsWith('✅') ? 'bg-green-50 text-green-700 border border-green-200' :
@@ -335,7 +357,6 @@ const Notifications: React.FC = () => {
         </div>
       )}
 
-      {/* Barra de busca e ações */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -370,7 +391,6 @@ const Notifications: React.FC = () => {
           </div>
         </div>
 
-        {/* Abas de filtro */}
         <div className="flex gap-1 mt-3 overflow-x-auto pb-1">
           {filterTabs.map((tab) => (
             <button
@@ -395,7 +415,6 @@ const Notifications: React.FC = () => {
         </div>
       </div>
 
-      {/* Lista de notificações agrupadas */}
       {filteredNotifications.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-10 text-center">
           <Bell size={48} strokeWidth={1} className="text-gray-300 mx-auto" />
@@ -422,12 +441,10 @@ const Notifications: React.FC = () => {
                       !notification.is_read ? '' : 'opacity-60'
                     }`}
                   >
-                    {/* Ícone do tipo */}
                     <div className="shrink-0 mt-0.5">
                       {getTypeIcon(notification.type)}
                     </div>
 
-                    {/* Conteúdo */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <p className={`text-sm ${!notification.is_read ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>
@@ -446,7 +463,7 @@ const Notifications: React.FC = () => {
                       <p className="text-xs text-gray-500 leading-relaxed">{notification.message}</p>
                       <div className="flex items-center gap-3 mt-1.5">
                         <span className="text-[10px] text-gray-400">{formatDate(notification.created_at)}</span>
-                        {notification.action_url && (
+                        {(notification.related_entity_id || notification.action_url) && (
                           <span className="flex items-center gap-0.5 text-[10px] text-blue-500">
                             <ExternalLink size={10} />
                             Ver detalhes
@@ -455,7 +472,6 @@ const Notifications: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Ações */}
                     <div className="flex flex-col gap-1 shrink-0">
                       {!notification.is_read && (
                         <button
@@ -482,7 +498,6 @@ const Notifications: React.FC = () => {
         ))
       )}
 
-      {/* Modal de confirmação */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
