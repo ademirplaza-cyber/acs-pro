@@ -209,19 +209,21 @@ export const api = {
   // RECUPERAÇÃO DE SENHA
   // ============================================
 
-  async requestPasswordReset(email: string): Promise<{ success: boolean; code?: string; error?: string }> {
+    async requestPasswordReset(email: string): Promise<{ success: boolean; code?: string; error?: string }> {
     console.log('🔐 Solicitando recuperação de senha para:', email);
     const user = await api.getUserByEmail(email);
     if (!user) {
       return { success: false, error: 'Email não encontrado no sistema.' };
     }
 
+    // Invalidar códigos anteriores
     await supabase
       .from('password_reset_codes')
       .update({ used: true })
       .eq('email', email.toLowerCase().trim())
       .eq('used', false);
 
+    // Gerar novo código
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
@@ -240,11 +242,38 @@ export const api = {
       return { success: false, error: 'Erro ao gerar código. Tente novamente.' };
     }
 
-    console.log('✅ Código de recuperação gerado:', code);
-    return { success: true, code: code };
-  },
+    // Enviar email via serverless function
+    try {
+      const baseUrl = window.location.origin;
+      const emailResponse = await fetch(`${baseUrl}/api/send-reset-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.toLowerCase().trim(),
+          code: code,
+          userName: user.name,
+        }),
+      });
 
-  async verifyResetCode(email: string, code: string): Promise<{ success: boolean; userId?: string; error?: string }> {
+      const emailResult = await emailResponse.json();
+
+      if (!emailResponse.ok) {
+        console.error('❌ Erro ao enviar email:', emailResult);
+        // Fallback: retorna o código para exibir na tela
+        return { success: true, code: code };
+      }
+
+      console.log('✅ Email enviado com sucesso!');
+      // Não retorna o código — foi enviado por email
+      return { success: true };
+
+    } catch (emailError) {
+      console.error('❌ Erro de rede ao enviar email:', emailError);
+      // Fallback: retorna o código para exibir na tela
+      return { success: true, code: code };
+    }
+  },
+    async verifyResetCode(email: string, code: string): Promise<{ success: boolean; userId?: string; error?: string }> {
     console.log('🔐 Verificando código de recuperação:', email, code);
     const { data, error } = await supabase
       .from('password_reset_codes')

@@ -278,7 +278,7 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleRequestCode = async (e: React.FormEvent) => {
+    const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -295,9 +295,16 @@ export const Login: React.FC = () => {
         return;
       }
       const result = await api.requestPasswordReset(resetEmail.trim());
-      if (result.success && result.code) {
-        setGeneratedCode(result.code);
-        setSuccess(`Código de recuperação gerado!`);
+      if (result.success) {
+        if (result.code) {
+          // Fallback: email não pôde ser enviado, exibir código na tela
+          setGeneratedCode(result.code);
+          setSuccess('Não foi possível enviar o email. Use o código abaixo:');
+        } else {
+          // Email enviado com sucesso
+          setGeneratedCode('');
+          setSuccess('Código de recuperação enviado para seu email! Verifique sua caixa de entrada e spam.');
+        }
         setScreenMode('FORGOT_CODE');
       } else {
         setError(result.error || 'Erro ao gerar código. Tente novamente.');
@@ -771,7 +778,7 @@ export const Login: React.FC = () => {
                 </>
               )}
 
-              {/* TELA: ESQUECI SENHA — STEP 2: CÓDIGO */}
+                            {/* TELA: ESQUECI SENHA — STEP 2: CÓDIGO */}
               {screenMode === 'FORGOT_CODE' && (
                 <>
                   <div className="text-center mb-6">
@@ -780,15 +787,28 @@ export const Login: React.FC = () => {
                     </div>
                     <h2 className="text-xl font-bold text-gray-800">Digite o Código</h2>
                     <p className="text-gray-400 text-sm mt-1">
-                      Código de 6 dígitos enviado para <strong className="text-gray-600">{resetEmail}</strong>
+                      {generatedCode
+                        ? <>Use o código exibido abaixo</>
+                        : <>Código enviado para <strong className="text-gray-600">{resetEmail}</strong>. Verifique também a pasta de spam.</>
+                      }
                     </p>
                   </div>
 
+                  {/* Só mostra o código na tela se for fallback (email não enviou) */}
                   {generatedCode && (
                     <div className="mb-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl text-center">
-                      <p className="text-[10px] text-amber-600 mb-1 font-semibold uppercase tracking-wider">Código de recuperação</p>
+                      <p className="text-[10px] text-amber-600 mb-1 font-semibold uppercase tracking-wider">Código de recuperação (fallback)</p>
                       <p className="text-3xl font-bold text-amber-800 tracking-[0.3em] font-mono">{generatedCode}</p>
                       <p className="text-[10px] text-amber-500 mt-2">Válido por 15 minutos</p>
+                    </div>
+                  )}
+
+                  {/* Mensagem de email enviado */}
+                  {!generatedCode && (
+                    <div className="mb-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl text-center">
+                      <Mail className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-blue-800">Email enviado!</p>
+                      <p className="text-xs text-blue-600 mt-1">Verifique sua caixa de entrada e a pasta de spam.</p>
                     </div>
                   )}
 
