@@ -9,37 +9,37 @@ interface State {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+export default class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Erro capturado pelo ErrorBoundary:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
   }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md text-center">
-            <div className="bg-red-100 p-4 rounded-full inline-block mb-4">
-              <span className="text-4xl">⚠️</span>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">⚠️</span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-800 mb-3">Algo deu errado</h1>
-            <p className="text-slate-600 mb-6">
-              Ocorreu um erro inesperado. Seus dados estão seguros.
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Algo deu errado</h2>
+            <p className="text-gray-600 mb-6">
+              Ocorreu um erro inesperado. Tente recarregar a página.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition-colors"
             >
-              Recarregar App
+              Recarregar página
             </button>
           </div>
         </div>
