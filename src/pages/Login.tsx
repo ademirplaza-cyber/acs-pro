@@ -21,12 +21,14 @@ import {
   Heart,
   Users,
   ClipboardList,
+  FileText,
+  X,
 } from 'lucide-react';
 
 type ScreenMode = 'LOGIN' | 'REGISTER' | 'FORGOT_EMAIL' | 'FORGOT_CODE' | 'FORGOT_NEWPASS';
 
 // ============================================
-// COMPONENTES EXTERNOS (fora do Login para não perder foco)
+// COMPONENTES EXTERNOS
 // ============================================
 
 const InputField = ({
@@ -84,6 +86,87 @@ const SubmitButton = ({
 };
 
 // ============================================
+// MODAL DE TERMOS E CONDIÇÕES
+// ============================================
+const TermsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-100 rounded-xl p-2">
+              <FileText className="w-5 h-5 text-blue-600" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-800">Termos e Condições de Uso</h2>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 text-sm text-gray-700 space-y-4">
+          <p className="font-semibold text-gray-900">ACS Top — Termos e Condições de Uso</p>
+          <p className="text-xs text-gray-500">Última atualização: Março de 2026</p>
+
+          <p>Ao utilizar o sistema ACS Top ("Aplicativo"), você ("Usuário" ou "Agente Comunitário de Saúde") concorda com os seguintes termos e condições:</p>
+
+          <p className="font-semibold text-gray-900 mt-4">1. Aceitação dos Termos</p>
+          <p>Ao criar uma conta e utilizar o Aplicativo, o Usuário declara ter lido, compreendido e aceito integralmente estes Termos e Condições. Caso não concorde com qualquer disposição, não utilize o sistema.</p>
+
+          <p className="font-semibold text-gray-900 mt-4">2. Descrição do Serviço</p>
+          <p>O ACS Top é uma plataforma de gestão para Agentes Comunitários de Saúde que permite o cadastro de famílias, membros, agendamento e registro de visitas domiciliares, monitoramento de indicadores de saúde e geração de relatórios.</p>
+
+          <p className="font-semibold text-gray-900 mt-4">3. Proteção de Dados e LGPD</p>
+          <p>O Usuário reconhece que os dados inseridos no sistema incluem informações sensíveis de saúde protegidas pela Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD). O Usuário se compromete a:</p>
+          <p>a) Utilizar os dados exclusivamente para fins profissionais relacionados à sua função de Agente Comunitário de Saúde;</p>
+          <p>b) Não compartilhar, copiar, distribuir ou divulgar dados de pacientes a terceiros não autorizados;</p>
+          <p>c) Manter sigilo absoluto sobre todas as informações de saúde acessadas através do sistema;</p>
+          <p>d) Não utilizar os dados para fins comerciais, publicitários ou qualquer finalidade diversa da assistência à saúde;</p>
+          <p>e) Comunicar imediatamente qualquer incidente de segurança ou acesso não autorizado.</p>
+
+          <p className="font-semibold text-gray-900 mt-4">4. Responsabilidades do Usuário</p>
+          <p>O Usuário é responsável por: manter a confidencialidade de suas credenciais de acesso (email e senha); todas as atividades realizadas em sua conta; a veracidade e precisão dos dados inseridos no sistema; utilizar o sistema em conformidade com a legislação vigente e normas do SUS; não permitir que terceiros utilizem sua conta.</p>
+
+          <p className="font-semibold text-gray-900 mt-4">5. Segurança e Isolamento de Dados</p>
+          <p>Cada Agente possui acesso exclusivo aos seus próprios dados. Nenhum agente pode visualizar, editar ou excluir dados de outro agente. O administrador do sistema tem acesso apenas às informações de gestão dos agentes, sem acesso aos dados dos pacientes.</p>
+
+          <p className="font-semibold text-gray-900 mt-4">6. Assinatura e Pagamento</p>
+          <p>O Aplicativo oferece um período de avaliação gratuita de 30 dias. Após esse período, o Usuário deverá contratar um plano de assinatura (mensal ou anual) para continuar utilizando o serviço. O não pagamento resultará na suspensão do acesso, sem perda dos dados armazenados, pelo período de até 90 dias.</p>
+
+          <p className="font-semibold text-gray-900 mt-4">7. Disponibilidade e Suporte</p>
+          <p>O ACS Top se compromete a manter o sistema disponível, porém não garante operação ininterrupta. Manutenções programadas serão comunicadas com antecedência. O suporte técnico está disponível via WhatsApp.</p>
+
+          <p className="font-semibold text-gray-900 mt-4">8. Propriedade Intelectual</p>
+          <p>Todo o conteúdo, design, código-fonte e funcionalidades do ACS Top são de propriedade exclusiva dos desenvolvedores. É proibida a reprodução, cópia ou engenharia reversa do sistema.</p>
+
+          <p className="font-semibold text-gray-900 mt-4">9. Rescisão</p>
+          <p>O Usuário pode encerrar sua conta a qualquer momento. O ACS Top se reserva o direito de suspender ou encerrar contas que violem estes termos, sem aviso prévio.</p>
+
+          <p className="font-semibold text-gray-900 mt-4">10. Alterações nos Termos</p>
+          <p>Estes termos podem ser atualizados periodicamente. O uso continuado do sistema após alterações constitui aceitação dos novos termos.</p>
+
+          <p className="font-semibold text-gray-900 mt-4">11. Foro</p>
+          <p>Fica eleito o foro da comarca do domicílio do desenvolvedor para dirimir quaisquer questões oriundas destes Termos.</p>
+
+          <p className="mt-6 text-xs text-gray-400 text-center">ACS Top — Saúde Integrada &copy; {new Date().getFullYear()}</p>
+        </div>
+
+        <div className="p-4 border-t border-gray-100">
+          <button
+            onClick={onClose}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors"
+          >
+            Entendi
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
 
@@ -100,6 +183,10 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Termos e Condições
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const [resetEmail, setResetEmail] = useState('');
   const [resetCode, setResetCode] = useState('');
@@ -163,6 +250,11 @@ export const Login: React.FC = () => {
         setIsLoading(false);
         return;
       }
+      if (!acceptedTerms) {
+        setError('Você precisa aceitar os Termos e Condições para criar sua conta.');
+        setIsLoading(false);
+        return;
+      }
       if (!isOnline) {
         setError('Você precisa estar conectado à internet para se registrar.');
         setIsLoading(false);
@@ -175,6 +267,7 @@ export const Login: React.FC = () => {
         setName('');
         setEmail('');
         setPassword('');
+        setAcceptedTerms(false);
       } else {
         setError('Este email já está cadastrado. Tente fazer login ou use outro email.');
       }
@@ -294,9 +387,6 @@ export const Login: React.FC = () => {
     setConfirmPassword('');
   };
 
-  // ============================================
-  // MESSAGE BOX (precisa estar dentro por usar error/success)
-  // ============================================
   const MessageBox = () => (
     <>
       {error && (
@@ -314,9 +404,6 @@ export const Login: React.FC = () => {
     </>
   );
 
-  // ============================================
-  // FEATURES
-  // ============================================
   const features = [
     { icon: Users, title: 'Gestão de Famílias', desc: 'Cadastre e acompanhe todas as famílias da sua microárea' },
     { icon: ClipboardList, title: 'Visitas Domiciliares', desc: 'Agende, registre e acompanhe todas as visitas com GPS' },
@@ -329,6 +416,9 @@ export const Login: React.FC = () => {
   // ============================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex">
+
+      {/* MODAL DE TERMOS */}
+      <TermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
 
       {/* LADO ESQUERDO — Branding (só desktop) */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden">
@@ -356,7 +446,7 @@ export const Login: React.FC = () => {
               <Activity size={36} className="text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">ACS Pro</h1>
+              <h1 className="text-3xl font-bold text-white">ACS Top</h1>
               <p className="text-blue-200/70 text-sm font-medium">Saúde Integrada</p>
             </div>
           </div>
@@ -385,7 +475,7 @@ export const Login: React.FC = () => {
 
           <div className="mt-16 pt-8 border-t border-white/10">
             <p className="text-blue-300/30 text-xs">
-              &copy; {new Date().getFullYear()} ACS Pro — Todos os direitos reservados
+              &copy; {new Date().getFullYear()} ACS Top — Todos os direitos reservados
             </p>
             <p className="text-blue-300/20 text-xs mt-1">
               Versão 2.0 • Dados seguros na nuvem
@@ -405,7 +495,7 @@ export const Login: React.FC = () => {
                 <Activity size={32} className="text-white" />
               </div>
               <div className="text-left">
-                <h1 className="text-2xl font-bold text-white">ACS Pro</h1>
+                <h1 className="text-2xl font-bold text-white">ACS Top</h1>
                 <p className="text-blue-200/60 text-xs font-medium">Saúde Integrada</p>
               </div>
             </div>
@@ -582,6 +672,28 @@ export const Login: React.FC = () => {
                       }
                     />
 
+                    {/* CHECKBOX DE TERMOS E CONDIÇÕES */}
+                    <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                      <input
+                        type="checkbox"
+                        id="acceptTerms"
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                      <label htmlFor="acceptTerms" className="text-xs text-gray-600 cursor-pointer leading-relaxed">
+                        Li e aceito os{' '}
+                        <button
+                          type="button"
+                          onClick={() => setShowTermsModal(true)}
+                          className="text-blue-600 hover:text-blue-700 font-semibold underline"
+                        >
+                          Termos e Condições de Uso
+                        </button>
+                        {' '}do ACS Top, incluindo as disposições sobre proteção de dados (LGPD) e sigilo das informações de saúde.
+                      </label>
+                    </div>
+
                     <SubmitButton
                       loading={isLoading}
                       label="Criar conta"
@@ -596,9 +708,10 @@ export const Login: React.FC = () => {
                     <div className="space-y-1.5">
                       {[
                         'Crie sua conta com nome, email e senha',
+                        'Aceite os Termos e Condições de Uso',
                         'Sua conta ficará com status "Pendente"',
                         'O administrador irá aprovar seu acesso',
-                        'Após aprovação, você poderá usar o sistema',
+                        'Após aprovação, você terá 30 dias grátis',
                       ].map((step, i) => (
                         <div key={i} className="flex items-start gap-2">
                           <span className="bg-blue-200 text-blue-800 text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5">
@@ -815,7 +928,7 @@ export const Login: React.FC = () => {
           {/* Rodapé mobile */}
           <div className="lg:hidden text-center mt-6">
             <p className="text-blue-300/30 text-xs">
-              &copy; {new Date().getFullYear()} ACS Pro — Todos os direitos reservados
+              &copy; {new Date().getFullYear()} ACS Top — Todos os direitos reservados
             </p>
           </div>
         </div>

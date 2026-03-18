@@ -21,6 +21,7 @@ import {
   Trash2,
   ExternalLink,
   CheckCheck,
+  MessageSquare,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -294,7 +295,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     );
   };
 
-  const NavItem = ({ to, icon: Icon, label, mobile }: { to: string; icon: any; label: string; mobile?: boolean }) => (
+  const NavItem = ({ to, icon: Icon, label, mobile, badge }: { to: string; icon: any; label: string; mobile?: boolean; badge?: number }) => (
     <Link
       to={to}
       className={`flex items-center transition-colors ${
@@ -308,7 +309,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       }`}
       onClick={() => setIsSidebarOpen(false)}
     >
-      <Icon size={mobile ? 24 : 22} className={!mobile && isActive(to) ? 'text-white' : ''} />
+      <div className="relative">
+        <Icon size={mobile ? 24 : 22} className={!mobile && isActive(to) ? 'text-white' : ''} />
+        {badge !== undefined && badge > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </div>
       <span className={`${mobile ? 'text-[10px] font-bold uppercase tracking-tighter' : 'font-medium text-base'}`}>{label}</span>
       {mobile && isActive(to) && <span className="absolute bottom-1 w-1 h-1 bg-blue-600 rounded-full"></span>}
     </Link>
@@ -326,7 +334,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         
         <div className="flex items-center space-x-2 text-blue-600">
             <Activity size={24} />
-            <span className="font-bold text-xl">ACS Pro</span>
+            <span className="font-bold text-xl">ACS Top</span>
         </div>
 
         <div className="flex items-center space-x-1">
@@ -343,7 +351,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div className="flex items-center space-x-2 text-blue-600">
             <Activity size={28} />
             <div>
-                <span className="text-2xl font-bold block leading-none">ACS Pro</span>
+                <span className="text-2xl font-bold block leading-none">ACS Top</span>
                 <p className="text-xs text-slate-400 font-medium">Saúde Integrada</p>
             </div>
           </div>
@@ -367,6 +375,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <NavItem to="/reports" icon={PieChart} label="Relatórios e Grupos" />
           <NavItem to="/visits" icon={ClipboardList} label="Visitas Pendentes" />
           <NavItem to="/families" icon={Users} label="Famílias & Pacientes" />
+          <NavItem to="/meeting" icon={MessageSquare} label="Reunião" />
           <NavItem to="/notifications" icon={Bell} label="Notificações" />
           
           {user?.role === UserRole.ADMIN && (

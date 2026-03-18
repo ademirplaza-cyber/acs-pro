@@ -28,7 +28,7 @@ const LandingPage: React.FC = () => {
 
   const whatsappLink = (plano: string) =>
     `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-      `Olá! Tenho interesse no plano ${plano} do ACS Pro. Pode me dar mais informações?`
+      `Olá! Tenho interesse no plano ${plano} do ACS Top. Pode me dar mais informações?`
     )}`;
 
   const features = [
@@ -91,7 +91,7 @@ const LandingPage: React.FC = () => {
   const faqs = [
     {
       q: 'Preciso instalar algum programa?',
-      a: 'Não! O ACS Pro funciona direto no navegador do celular ou computador. Você também pode instalar como app no celular sem precisar da Play Store.',
+      a: 'Não! O ACS Top funciona direto no navegador do celular ou computador. Você também pode instalar como app no celular sem precisar da Play Store.',
     },
     {
       q: 'Meus dados ficam salvos onde?',
@@ -111,7 +111,7 @@ const LandingPage: React.FC = () => {
     },
     {
       q: 'O sistema gera relatórios do e-SUS?',
-      a: 'Sim! O ACS Pro gera relatórios completos com indicadores de cobertura, produtividade, grupos prioritários (gestantes, hipertensos, diabéticos, crianças e idosos).',
+      a: 'Sim! O ACS Top gera relatórios completos com indicadores de cobertura, produtividade, grupos prioritários (gestantes, hipertensos, diabéticos, crianças e idosos).',
     },
   ];
 
@@ -128,7 +128,7 @@ const LandingPage: React.FC = () => {
               <Activity size={22} className="text-white" />
             </div>
             <div>
-              <span className="text-lg font-bold text-gray-900">ACS Pro</span>
+              <span className="text-lg font-bold text-gray-900">ACS Top</span>
               <span className="hidden sm:inline text-xs text-gray-400 ml-2">Saúde Integrada</span>
             </div>
           </div>
@@ -479,7 +479,7 @@ const LandingPage: React.FC = () => {
             Pronto para modernizar seu trabalho?
           </h2>
           <p className="text-blue-100/70 text-base sm:text-lg mb-8 max-w-xl mx-auto">
-            Junte-se aos agentes de saúde que já estão usando o ACS Pro para otimizar sua rotina e melhorar o atendimento.
+            Junte-se aos agentes de saúde que já estão usando o ACS Top para otimizar sua rotina e melhorar o atendimento.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
@@ -509,14 +509,14 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Activity size={20} className="text-blue-400" />
-            <span className="text-white font-bold">ACS Pro</span>
+            <span className="text-white font-bold">ACS Top</span>
             <span className="text-slate-500 text-sm">— Saúde Integrada</span>
           </div>
           <p className="text-slate-500 text-xs mb-2">
             Sistema de Gestão para Agentes Comunitários de Saúde
           </p>
           <p className="text-slate-600 text-xs">
-            &copy; {new Date().getFullYear()} ACS Pro — Todos os direitos reservados
+            &copy; {new Date().getFullYear()} ACS Top — Todos os direitos reservados
           </p>
           <div className="mt-4 flex items-center justify-center gap-4">
             <a

@@ -8,9 +8,9 @@ export enum UserRole {
 }
 
 export enum UserStatus {
-  PENDING = 'PENDING',    // Aguardando aprovação
-  ACTIVE = 'ACTIVE',      // Ativo e funcionando
-  BLOCKED = 'BLOCKED'     // Bloqueado pelo admin
+  PENDING = 'PENDING',
+  ACTIVE = 'ACTIVE',
+  BLOCKED = 'BLOCKED'
 }
 
 export enum VisitStatus {
@@ -27,7 +27,7 @@ export enum PriorityLevel {
 }
 
 // ============================================
-// USER - Interface Principal de Usuário
+// USER
 // ============================================
 
 export interface User {
@@ -37,20 +37,17 @@ export interface User {
   password?: string;
   role: UserRole;
   status: UserStatus;
-  
-  // ESSENCIAL: Controle de assinatura
-  subscriptionExpiresAt?: string; // Data ISO string
-  createdAt?: string;             // Data ISO string
-  
-  // Dados específicos do ACS
-  microarea?: string;             // Área de atuação
-  equipe?: string;               // Nome da equipe ESF
-  cns?: string;                  // Cartão Nacional de Saúde
+  subscriptionExpiresAt?: string;
+  acceptedTermsAt?: string;
+  createdAt?: string;
+  microarea?: string;
+  equipe?: string;
+  cns?: string;
   phone?: string;
 }
 
 // ============================================
-// FAMILY - Cadastro de Famílias
+// FAMILY
 // ============================================
 
 export interface Address {
@@ -67,13 +64,11 @@ export interface Address {
 
 export interface Family {
   id: string;
-  familyNumber: string;           // Número da família na microárea
+  familyNumber: string;
   address: Address;
-  agentId: string;                // ID do ACS responsável
-  registeredAt: string;           // Data de cadastro
+  agentId: string;
+  registeredAt: string;
   updatedAt: string;
-  
-  // Condições de moradia (para relatórios)
   hasBasicSanitation: boolean;
   hasRunningWater: boolean; 
   hasElectricity: boolean;
@@ -83,7 +78,7 @@ export interface Family {
 }
 
 // ============================================
-// PERSON - Membros da Família
+// PERSON
 // ============================================
 
 export interface Person {
@@ -91,86 +86,97 @@ export interface Person {
   familyId: string;
   name: string;
   cpf?: string;
-  cns?: string;                   // Cartão Nacional de Saúde
-  birthDate: string;              // Data nascimento
+  cns?: string;
+  birthDate: string;
   gender: 'M' | 'F' | 'OTHER';
   isHeadOfFamily: boolean;
   phone?: string;
+  isPuerperium: boolean;
   
-  // Condições de saúde prioritárias
+  // Parentesco com responsável
+  relationshipToHead?: string;
+
+  // Condições de saúde
   hasHypertension: boolean;
   hasDiabetes: boolean;
   isPregnant: boolean;
-  pregnancyDueDate?: string;      // Data provável do parto
-  lastMenstrualPeriod?: string;   // DUM para cálculo IG
+  pregnancyDueDate?: string;
+  lastMenstrualPeriod?: string;
   
-    // Informações complementares
   occupation?: string;
   isDisabled: boolean;
   chronicDiseases?: string[];
   medications?: string[];
   
-  // Novos campos adicionados
   isBedridden: boolean;
   hasMobilityDifficulty: boolean;
   usesInsulin: boolean;
   isSmoker: boolean;
+  isAlcoholic: boolean;
+  isDrugUser: boolean;
   isWorking: boolean;
   receivesBolsaFamilia: boolean;
   nisNumber?: string;
   isHighRiskPregnancy: boolean;
   rareDiseases?: string;
+  otherConditions?: string;
+
+  // Observações de saúde
+  healthObservations?: string;
   
   createdAt: string;
   updatedAt: string;
-
 }
 
 // ============================================
-// VISIT - Visitas Domiciliares
+// VISIT
 // ============================================
 
 export interface Visit {
   id: string;
   familyId: string;
   agentId: string;
-  scheduledDate: string;          // Data agendada
-  completedDate?: string;         // Data realizada
+  scheduledDate: string;
+  completedDate?: string;
   status: VisitStatus;
   priority: PriorityLevel;
-  
-  // Localização (GPS automático)
   latitude?: number;
   longitude?: number;
-  
-  // Conteúdo da visita
   observations?: string;
   orientationsGiven?: string[];
   healthIssuesIdentified?: string[];
   referralsNeeded?: string[];
-  
-  // Pessoas atendidas
-  peopleAttended?: string[];      // IDs das pessoas
-  
-  // Sinais vitais básicos
+  peopleAttended?: string[];
   bloodPressure?: Array<{
     systolic: number;
     diastolic: number;
     personId: string;
   }>;
-  
   bloodGlucose?: Array<{
     value: number;
     personId: string;
   }>;
-  
   createdAt: string;
   updatedAt: string;
-  needsSync: boolean;             // Para controle offline
+  needsSync: boolean;
 }
 
 // ============================================
-// ALERT - Sistema de Alertas
+// MEETING TOPIC - Assuntos para Reunião
+// ============================================
+
+export interface MeetingTopic {
+  id: string;
+  agentId: string;
+  title: string;
+  observations: string;
+  status: 'PENDING' | 'RESOLVED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// ALERT
 // ============================================
 
 export interface Alert {
@@ -179,7 +185,7 @@ export interface Alert {
   priority: PriorityLevel;
   title: string;
   message: string;
-  relatedEntityId?: string;       // ID da família/pessoa relacionada
+  relatedEntityId?: string;
   agentId: string;
   isRead: boolean;
   createdAt: string;
@@ -187,36 +193,29 @@ export interface Alert {
 }
 
 // ============================================
-// REPORT - Relatórios Mensais
+// REPORT
 // ============================================
 
 export interface MonthlyReport {
   agentId: string;
-  month: string;                  // "2026-01" formato YYYY-MM
-  
-  // Métricas básicas
+  month: string;
   totalVisits: number;
   completedVisits: number;
   totalFamilies: number;
   totalPeople: number;
-  
-  // Grupos prioritários
   pregnantWomen: number;
   hypertensivePatients: number;
   diabeticPatients: number;
   childrenUnder2: number;
   elderlyOver60: number;
-  
-  // Indicadores de qualidade
-  prenatalCoverage: number;       // Percentual
-  hypertensionControlled: number; // Percentual
-  vaccinationUpToDate: number;    // Percentual
-  
+  prenatalCoverage: number;
+  hypertensionControlled: number;
+  vaccinationUpToDate: number;
   generatedAt: string;
 }
 
 // ============================================
-// NOTIFICATION - Configurações
+// NOTIFICATION
 // ============================================
 
 export interface NotificationSettings {
@@ -226,12 +225,12 @@ export interface NotificationSettings {
   notifyOverdueVisits: boolean;
   notifyUpcomingVisits: boolean;
   notifyHighRiskCases: boolean;
-  quietHoursStart?: string;       // "22:00"
-  quietHoursEnd?: string;         // "07:00"
+  quietHoursStart?: string;
+  quietHoursEnd?: string;
 }
 
 // ============================================
-// SYNC - Controle de Sincronização
+// SYNC
 // ============================================
 
 export interface SyncStatus {

@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
-  WifiOff
+  WifiOff,
+  Edit2
 } from 'lucide-react';
 
 export const Families = () => {
@@ -25,6 +26,7 @@ export const Families = () => {
   const [families, setFamilies] = useState<Family[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingFamily, setEditingFamily] = useState<Family | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -42,7 +44,7 @@ export const Families = () => {
     hasBasicSanitation: true,
     hasRunningWater: true,
     hasElectricity: true,
-    dwellingType: 'HOUSE' as const,
+    dwellingType: 'HOUSE' as 'HOUSE' | 'APARTMENT' | 'SHACK' | 'OTHER',
     householdIncome: 0,
     notes: ''
   });
@@ -54,7 +56,7 @@ export const Families = () => {
   useEffect(() => {
     const handleOnline = () => {
       setIsOffline(false);
-      loadFamilies(); // Recarrega quando voltar online
+      loadFamilies();
     };
     const handleOffline = () => setIsOffline(true);
 
@@ -67,7 +69,7 @@ export const Families = () => {
     };
   }, []);
 
-  // Carregar famílias (híbrido online/offline)
+  // Carregar famílias
   const loadFamilies = async () => {
     if (!user) return;
 
@@ -75,15 +77,11 @@ export const Families = () => {
       setIsLoading(true);
 
       if (navigator.onLine && !isOffline) {
-        // MODO ONLINE: Buscar do Supabase
         const data = await api.getFamilies(user.id);
         setFamilies(data);
-        
-        // Salvar no cache local para uso offline
         localStorage.setItem(`families_cache_${user.id}`, JSON.stringify(data));
         console.log('✅ Famílias carregadas do Supabase:', data.length);
       } else {
-        // MODO OFFLINE: Usar cache local
         const cached = localStorage.getItem(`families_cache_${user.id}`);
         if (cached) {
           setFamilies(JSON.parse(cached));
@@ -94,8 +92,6 @@ export const Families = () => {
       }
     } catch (error) {
       console.error('Erro ao carregar famílias:', error);
-      
-      // Fallback para cache em caso de erro
       const cached = localStorage.getItem(`families_cache_${user.id}`);
       if (cached) {
         setFamilies(JSON.parse(cached));
@@ -145,6 +141,52 @@ export const Families = () => {
     );
   };
 
+  const resetForm = () => {
+    setFormData({
+      familyNumber: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: 'São Paulo',
+      state: 'SP',
+      zipCode: '',
+      hasBasicSanitation: true,
+      hasRunningWater: true,
+      hasElectricity: true,
+      dwellingType: 'HOUSE',
+      householdIncome: 0,
+      notes: ''
+    });
+    setLocation({});
+    setEditingFamily(null);
+  };
+
+  const handleEditFamily = (family: Family) => {
+    setEditingFamily(family);
+    setFormData({
+      familyNumber: family.familyNumber,
+      street: family.address.street,
+      number: family.address.number,
+      complement: family.address.complement || '',
+      neighborhood: family.address.neighborhood,
+      city: family.address.city || 'São Paulo',
+      state: family.address.state || 'SP',
+      zipCode: family.address.zipCode || '',
+      hasBasicSanitation: family.hasBasicSanitation ?? true,
+      hasRunningWater: family.hasRunningWater ?? true,
+      hasElectricity: family.hasElectricity ?? true,
+      dwellingType: family.dwellingType || 'HOUSE',
+      householdIncome: family.householdIncome || 0,
+      notes: family.notes || ''
+    });
+    setLocation({
+      latitude: family.address.latitude,
+      longitude: family.address.longitude
+    });
+    setIsFormOpen(true);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -174,12 +216,12 @@ export const Families = () => {
         longitude: location.longitude
       };
 
-      const newFamily: Family = {
-        id: crypto.randomUUID(),
+      const familyToSave: Family = {
+        id: editingFamily ? editingFamily.id : crypto.randomUUID(),
         familyNumber: formData.familyNumber,
         address,
-        agentId: user.id,
-        registeredAt: new Date().toISOString(),
+        agentId: editingFamily ? editingFamily.agentId : user.id,
+        registeredAt: editingFamily ? editingFamily.registeredAt : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         hasBasicSanitation: formData.hasBasicSanitation,
         hasRunningWater: formData.hasRunningWater,
@@ -189,30 +231,13 @@ export const Families = () => {
         notes: formData.notes || undefined
       };
 
-      await api.saveFamily(newFamily);
-      await loadFamilies(); // Recarregar lista
+      await api.saveFamily(familyToSave);
+      await loadFamilies();
       
-      // Resetar formulário
-      setFormData({
-        familyNumber: '',
-        street: '',
-        number: '',
-        complement: '',
-        neighborhood: '',
-        city: 'São Paulo',
-        state: 'SP',
-        zipCode: '',
-        hasBasicSanitation: true,
-        hasRunningWater: true,
-        hasElectricity: true,
-        dwellingType: 'HOUSE',
-        householdIncome: 0,
-        notes: ''
-      });
-      setLocation({});
+      resetForm();
       setIsFormOpen(false);
       
-      alert('✅ Família salva no banco de dados na nuvem!');
+      alert(editingFamily ? '✅ Família atualizada no banco de dados!' : '✅ Família salva no banco de dados na nuvem!');
 
     } catch (error) {
       console.error('Erro ao salvar família:', error);
@@ -263,14 +288,14 @@ export const Families = () => {
                 <Home size={28} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Nova Família</h1>
+                <h1 className="text-2xl font-bold">{editingFamily ? 'Editar Família' : 'Nova Família'}</h1>
                 <p className="text-blue-100">
                   {isOffline ? '⚠️ Offline - Conecte-se para salvar' : '☁️ Será salva no banco de dados na nuvem'}
                 </p>
               </div>
             </div>
             <button
-              onClick={() => setIsFormOpen(false)}
+              onClick={() => { setIsFormOpen(false); resetForm(); }}
               className="p-2 hover:bg-white/20 rounded-xl transition-colors"
             >
               <X size={24} />
@@ -515,7 +540,7 @@ export const Families = () => {
           <div className="flex space-x-4 pt-4 border-t border-slate-200">
             <button
               type="button"
-              onClick={() => setIsFormOpen(false)}
+              onClick={() => { setIsFormOpen(false); resetForm(); }}
               className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors"
               disabled={isSaving}
             >
@@ -534,7 +559,7 @@ export const Families = () => {
               ) : (
                 <>
                   <Save size={20} />
-                  <span>Salvar Família</span>
+                  <span>{editingFamily ? 'Atualizar Família' : 'Salvar Família'}</span>
                 </>
               )}
             </button>
@@ -571,7 +596,7 @@ export const Families = () => {
             <span>Atualizar</span>
           </button>
           <button
-            onClick={() => setIsFormOpen(true)}
+            onClick={() => { resetForm(); setIsFormOpen(true); }}
             className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 flex items-center space-x-2 shadow-lg hover:shadow-xl transition-all"
           >
             <Plus size={20} />
@@ -611,7 +636,7 @@ export const Families = () => {
           </p>
           {!searchTerm && (
             <button
-              onClick={() => setIsFormOpen(true)}
+              onClick={() => { resetForm(); setIsFormOpen(true); }}
               className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 inline-flex items-center space-x-2"
             >
               <Plus size={20} />
@@ -622,7 +647,6 @@ export const Families = () => {
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredFamilies.map(family => {
-            // Contar membros desta família (ainda do cache local até migrarmos pessoas)
             const allPeople = JSON.parse(localStorage.getItem('acs_people') || '[]');
             const familyMembers = allPeople.filter((p: any) => p.familyId === family.id);
             const memberCount = familyMembers.length;
@@ -642,13 +666,22 @@ export const Families = () => {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleDelete(family.id)}
-                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Excluir família"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={() => handleEditFamily(family)}
+                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Editar família"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(family.id)}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Excluir família"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Endereço */}

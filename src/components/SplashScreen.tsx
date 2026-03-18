@@ -107,7 +107,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish, minDuration = 280
             : 'translate-y-8 opacity-0'
         }`}>
           <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
-            ACS <span className="text-blue-200">Pro</span>
+            ACS <span className="text-blue-200">Top</span>
           </h1>
           <p className="text-blue-200/80 text-sm sm:text-base mt-2 font-medium tracking-wide">
             Saúde Integrada

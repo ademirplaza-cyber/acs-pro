@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['logo.svg'],
       manifest: {
-        name: 'ACS Pro - Saúde Integrada',
-        short_name: 'ACS Pro',
+        name: 'ACS Top - Saúde Integrada',
+        short_name: 'ACS Top',
         description: 'Sistema de Gestão para Agentes Comunitários de Saúde',
         theme_color: '#2563eb',
         background_color: '#0f172a',

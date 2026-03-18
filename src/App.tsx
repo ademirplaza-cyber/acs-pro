@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Login } from './pages/Login';
 import { UserRole } from './types';
+import { Meeting } from './pages/Meeting';
 import SplashScreen from './components/SplashScreen';
 
 // Lazy loading para performance
@@ -46,7 +47,7 @@ const AppRoutes = () => {
         <Route path="/families" element={<ProtectedRoute><Families /></ProtectedRoute>} />
         <Route path="/families/:id" element={<ProtectedRoute><FamilyDetails /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-        
+        <Route path="/meeting" element={<ProtectedRoute><Meeting /></ProtectedRoute>} />
         <Route path="/admin" element={
           <ProtectedRoute requiredRole={UserRole.ADMIN}>
             <Admin />

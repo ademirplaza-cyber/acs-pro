@@ -33,7 +33,7 @@ const NotFound: React.FC = () => {
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 border border-white/20">
             <Activity size={24} className="text-white" />
           </div>
-          <span className="text-xl font-bold text-white">ACS Pro</span>
+          <span className="text-xl font-bold text-white">ACS Top</span>
         </div>
 
         {/* Número 404 animado */}
@@ -90,7 +90,7 @@ const NotFound: React.FC = () => {
 
         {/* Versão */}
         <p className="mt-10 text-blue-300/20 text-[10px] font-medium tracking-widest uppercase">
-          ACS Pro v2.0
+          ACS Top v2.0
         </p>
       </div>
 

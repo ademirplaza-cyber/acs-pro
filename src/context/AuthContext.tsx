@@ -136,6 +136,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         role: UserRole.AGENT,
         status: UserStatus.PENDING,
         subscriptionExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        acceptedTermsAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       };
 

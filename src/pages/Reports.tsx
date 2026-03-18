@@ -28,7 +28,8 @@ import {
   ShieldAlert,
   Stethoscope,
   Dna,
-  PersonStanding
+  PersonStanding,
+  Wine,
 } from 'lucide-react';
 
 type ViewMode = 'OVERVIEW' | 'SEARCH';
@@ -64,6 +65,8 @@ export const Reports = () => {
   const [fRareDiseases, setFRareDiseases] = useState(false);
   const [fChildren, setFChildren] = useState(false);
   const [fElderly, setFElderly] = useState(false);
+  const [fAlcoholic, setFAlcoholic] = useState(false);
+  const [fDrugUser, setFDrugUser] = useState(false);
 
   const loadData = async () => {
     if (!user) return;
@@ -102,6 +105,7 @@ export const Reports = () => {
     fHypertensive, fDiabetic, fInsulin, fPregnant, fHighRisk,
     fSmoker, fBedridden, fMobility, fDisabled, fBolsaFamilia,
     fWorking, fChronic, fRareDiseases, fChildren, fElderly,
+    fAlcoholic, fDrugUser,
   ].filter(Boolean).length + (genderFilter !== 'ALL' ? 1 : 0) + (ageFrom ? 1 : 0) + (ageTo ? 1 : 0);
 
   const clearAll = () => {
@@ -111,6 +115,7 @@ export const Reports = () => {
     setFBedridden(false); setFMobility(false); setFDisabled(false);
     setFBolsaFamilia(false); setFWorking(false); setFChronic(false);
     setFRareDiseases(false); setFChildren(false); setFElderly(false);
+    setFAlcoholic(false); setFDrugUser(false);
   };
 
   const filtered = useMemo(() => {
@@ -134,8 +139,10 @@ export const Reports = () => {
     if (fWorking) r = r.filter(p => p.isWorking);
     if (fChronic) r = r.filter(p => p.chronicDiseases && p.chronicDiseases.length > 0);
     if (fRareDiseases) r = r.filter(p => p.rareDiseases && p.rareDiseases.trim() !== '');
+    if (fAlcoholic) r = r.filter(p => p.isAlcoholic);
+    if (fDrugUser) r = r.filter(p => p.isDrugUser);
     return r;
-  }, [allPeople, searchName, genderFilter, ageFrom, ageTo, fHypertensive, fDiabetic, fInsulin, fPregnant, fHighRisk, fSmoker, fBedridden, fMobility, fDisabled, fBolsaFamilia, fWorking, fChronic, fRareDiseases, fChildren, fElderly]);
+  }, [allPeople, searchName, genderFilter, ageFrom, ageTo, fHypertensive, fDiabetic, fInsulin, fPregnant, fHighRisk, fSmoker, fBedridden, fMobility, fDisabled, fBolsaFamilia, fWorking, fChronic, fRareDiseases, fChildren, fElderly, fAlcoholic, fDrugUser]);
 
   const stats = useMemo(() => {
     const [y, m] = selectedMonth.split('-').map(Number);
@@ -154,6 +161,8 @@ export const Reports = () => {
       smokers: allPeople.filter(p => p.isSmoker).length,
       bedridden: allPeople.filter(p => p.isBedridden).length,
       insulin: allPeople.filter(p => p.usesInsulin).length,
+      alcoholic: allPeople.filter(p => p.isAlcoholic).length,
+      drugUser: allPeople.filter(p => p.isDrugUser).length,
       totalVisits: mv.length, completed: cv.length,
       coverage: families.length > 0 ? (vi.size / families.length * 100) : 0,
       avg: cv.length / 22,
@@ -219,7 +228,7 @@ export const Reports = () => {
         </div>
       </div>
 
-      {/* Tab switch */}
+      {/* Tab switch — agora só 2 abas */}
       <div className="grid grid-cols-2 bg-slate-100 rounded-xl p-1 gap-1">
         <button
           onClick={() => setViewMode('OVERVIEW')}
@@ -241,7 +250,6 @@ export const Reports = () => {
       {/* =================== VISÃO GERAL =================== */}
       {viewMode === 'OVERVIEW' && (
         <div className="space-y-4">
-          {/* Grid de indicadores */}
           <div className="grid grid-cols-3 gap-2">
             {[
               { icon: Users, label: 'Pessoas', v: stats.people, bg: 'bg-blue-50', fg: 'text-blue-600' },
@@ -259,7 +267,6 @@ export const Reports = () => {
             ))}
           </div>
 
-          {/* Produtividade */}
           <div className="bg-slate-800 rounded-xl p-4 text-white">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -297,7 +304,6 @@ export const Reports = () => {
             </div>
           </div>
 
-          {/* Alertas */}
           {(alerts.preg > 0 || alerts.hyper > 0 || alerts.diab > 0) && (
             <div className="rounded-xl border border-red-200 bg-red-50 overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-2.5 bg-red-100/50">
@@ -336,13 +342,14 @@ export const Reports = () => {
             </div>
           )}
 
-          {/* Resumo extra */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[
               { icon: Cigarette, label: 'Fumantes', v: stats.smokers },
               { icon: BedDouble, label: 'Acamados', v: stats.bedridden },
               { icon: Syringe, label: 'Insulina', v: stats.insulin },
               { icon: Baby, label: 'Crianças', v: stats.children },
+              { icon: Wine, label: 'Alcoólatras', v: stats.alcoholic },
+              { icon: AlertTriangle, label: 'Drogas', v: stats.drugUser },
             ].map(({ icon: Ic, label, v }) => (
               <div key={label} className="flex items-center justify-between bg-white rounded-xl border border-slate-100 px-3 py-2.5">
                 <div className="flex items-center gap-2">
@@ -359,7 +366,6 @@ export const Reports = () => {
       {/* =================== BUSCA =================== */}
       {viewMode === 'SEARCH' && (
         <div className="space-y-3">
-          {/* Search bar */}
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2.5">
             <Search size={16} className="text-slate-400 flex-shrink-0" />
             <input
@@ -371,7 +377,6 @@ export const Reports = () => {
             {searchName && <button onClick={() => setSearchName('')}><X size={14} className="text-slate-400" /></button>}
           </div>
 
-          {/* Gender + Age */}
           <div className="flex items-center gap-2 flex-wrap">
             {(['ALL', 'M', 'F'] as const).map(g => (
               <button
@@ -386,13 +391,12 @@ export const Reports = () => {
             ))}
             <div className="flex items-center gap-1 ml-auto">
               <input type="number" min="0" max="120" value={ageFrom} onChange={(e) => setAgeFrom(e.target.value)} placeholder="De" className="w-11 px-1 py-2 border border-slate-200 rounded-lg text-xs text-center outline-none focus:border-blue-400 bg-white" />
-              <span className="text-slate-400 text-[10px]">—</span>
+              <span className="text-slate-400 text-[10px]">–</span>
               <input type="number" min="0" max="120" value={ageTo} onChange={(e) => setAgeTo(e.target.value)} placeholder="Até" className="w-11 px-1 py-2 border border-slate-200 rounded-lg text-xs text-center outline-none focus:border-blue-400 bg-white" />
               <span className="text-[10px] text-slate-400">anos</span>
             </div>
           </div>
 
-          {/* Expandable filters */}
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <button onClick={() => setShowFilters(!showFilters)} className="w-full flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
@@ -424,6 +428,8 @@ export const Reports = () => {
                   <Pill on={fWorking} label="Trabalha" icon={Briefcase} onClick={() => setFWorking(!fWorking)} />
                   <Pill on={fChronic} label="D. Crônicas" icon={Stethoscope} onClick={() => setFChronic(!fChronic)} />
                   <Pill on={fRareDiseases} label="D. Raras" icon={Dna} onClick={() => setFRareDiseases(!fRareDiseases)} />
+                  <Pill on={fAlcoholic} label="Alcoólatras" icon={Wine} onClick={() => setFAlcoholic(!fAlcoholic)} />
+                  <Pill on={fDrugUser} label="Drogas" icon={AlertTriangle} onClick={() => setFDrugUser(!fDrugUser)} />
                 </div>
                 {filterCount > 0 && (
                   <button onClick={clearAll} className="text-xs text-blue-600 font-semibold">Limpar filtros</button>
@@ -432,7 +438,6 @@ export const Reports = () => {
             )}
           </div>
 
-          {/* Results */}
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
               <p className="text-sm text-slate-800">
@@ -470,7 +475,7 @@ export const Reports = () => {
                           {fam && (
                             <div className="flex items-center gap-1 mt-0.5">
                               <MapPin size={10} className="text-slate-300 flex-shrink-0" />
-                              <span className="text-[11px] text-slate-400 truncate">Fam. {fam.familyNumber} — {fam.address.street}, {fam.address.number}</span>
+                              <span className="text-[11px] text-slate-400 truncate">Fam. {fam.familyNumber} – {fam.address.street}, {fam.address.number}</span>
                             </div>
                           )}
                           {p.phone && (
@@ -547,6 +552,16 @@ export const Reports = () => {
                                 <Dna size={10} />Rara
                               </span>
                             )}
+                            {p.isAlcoholic && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded font-medium">
+                                <Wine size={10} />Alcoólatra
+                              </span>
+                            )}
+                            {p.isDrugUser && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded font-medium">
+                                <AlertTriangle size={10} />Drogas
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -560,4 +575,4 @@ export const Reports = () => {
       )}
     </div>
   );
-};
+}

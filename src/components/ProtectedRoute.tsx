@@ -163,7 +163,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
 
           <div className="space-y-3">
             <a
-              href="https://wa.me/5511999999999?text=Olá, minha conta no ACS PRO foi bloqueada. Pode verificar?"
+              href="https://wa.me/5511999999999?text=Olá, minha conta no ACS TOP foi bloqueada. Pode verificar?"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-3 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2"
@@ -241,10 +241,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
                 {isRefreshing ? 'Verificando...' : 'Verificar renovação'}
               </button>
               <a
-                href="https://wa.me/5511986373147?text=Olá, preciso renovar minha assinatura do ACS PRO."
+                href="https://wa.me/5511986373147?text=Olá, preciso renovar minha assinatura do ACS TOP."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 block"
+                className="w-full py-3 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2"
               >
                 Contatar via WhatsApp
               </a>
