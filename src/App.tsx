@@ -1,24 +1,38 @@
-import { useState, useEffect, Suspense, lazy } from 'react';
+import { useState, useEffect, Suspense, lazy, ComponentType } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UserRole } from './types';
-
-// Imports diretos (sem lazy) para componentes que podem não ter default export
-const LazyDashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: 'default' in m ? m.default : (m as any).Dashboard })));
-const LazyVisits = lazy(() => import('./pages/Visits').then(m => ({ default: 'default' in m ? m.default : (m as any).Visits })));
-const LazyFamilies = lazy(() => import('./pages/Families').then(m => ({ default: 'default' in m ? m.default : (m as any).Families })));
-const LazyFamilyDetails = lazy(() => import('./pages/FamilyDetails').then(m => ({ default: 'default' in m ? m.default : (m as any).FamilyDetails })));
-const LazyAdmin = lazy(() => import('./pages/Admin').then(m => ({ default: 'default' in m ? m.default : (m as any).Admin })));
-const LazyReports = lazy(() => import('./pages/Reports').then(m => ({ default: 'default' in m ? m.default : (m as any).Reports })));
-const LazyNotifications = lazy(() => import('./pages/Notifications').then(m => ({ default: 'default' in m ? m.default : (m as any).Notifications })));
-const LazyNotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: 'default' in m ? m.default : (m as any).NotFound })));
-const LazySubscription = lazy(() => import('./pages/Subscription').then(m => ({ default: 'default' in m ? m.default : (m as any).Subscription })));
-const LazyLogin = lazy(() => import('./pages/Login').then(m => ({ default: 'default' in m ? m.default : (m as any).Login })));
-const LazyLandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: 'default' in m ? m.default : (m as any).LandingPage })));
-
-// ProtectedRoute e ErrorBoundary
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+
+// Helper para lazy load de named exports
+function lazyNamed<T extends ComponentType<any>>(
+  factory: () => Promise<{ [key: string]: T }>
+) {
+  return lazy(() =>
+    factory().then((module) => {
+      // Pegar o primeiro export que não seja 'default' ou retornar default
+      if ('default' in module) return { default: module.default };
+      const key = Object.keys(module)[0];
+      return { default: module[key] };
+    })
+  );
+}
+
+// Páginas com named export (export const)
+const LazyDashboard = lazyNamed(() => import('./pages/Dashboard'));
+const LazyFamilies = lazyNamed(() => import('./pages/Families'));
+const LazyVisits = lazyNamed(() => import('./pages/Visits'));
+const LazyReports = lazyNamed(() => import('./pages/Reports'));
+const LazyAdmin = lazyNamed(() => import('./pages/Admin'));
+const LazyFamilyDetails = lazyNamed(() => import('./pages/FamilyDetails'));
+const LazyLogin = lazyNamed(() => import('./pages/Login'));
+
+// Páginas com default export (export default)
+const LazyNotifications = lazy(() => import('./pages/Notifications'));
+const LazyNotFound = lazy(() => import('./pages/NotFound'));
+const LazyLandingPage = lazy(() => import('./pages/LandingPage'));
+const LazySubscription = lazy(() => import('./pages/Subscription'));
 
 // Loading fallback
 const LoadingFallback = () => (

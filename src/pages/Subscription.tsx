@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { UserRole } from '../types';
 import {
   CreditCard,
   Check,
@@ -18,14 +17,6 @@ import {
   Sparkles
 } from 'lucide-react';
 
-// Import Layout compatível com named ou default export
-let Layout: React.ComponentType<{ children: React.ReactNode }>;
-try {
-  Layout = require('../components/Layout').default || require('../components/Layout').Layout;
-} catch {
-  Layout = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-}
-
 export default function Subscription() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -34,7 +25,6 @@ export default function Subscription() {
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'verifying' | 'success' | 'error' | 'cancelled'>('idle');
   const [message, setMessage] = useState('');
 
-  // Verificar retorno do Stripe (HashRouter: params ficam depois do path no hash)
   useEffect(() => {
     const hash = window.location.hash;
     const hashParts = hash.split('?');
@@ -125,7 +115,6 @@ export default function Subscription() {
     }
   };
 
-  // Calcular dias restantes
   const getDaysRemaining = () => {
     if (!user) return 0;
     const createdAt = new Date(user.createdAt || Date.now());
@@ -140,236 +129,228 @@ export default function Subscription() {
   const isExpired = daysRemaining <= 0;
   const isTrialing = !user?.subscriptionExpiresAt || daysRemaining <= 30;
 
-  // Tela de verificação
   if (paymentStatus === 'verifying') {
     return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-800 mb-2">Verificando pagamento...</h2>
-            <p className="text-gray-500">Aguarde enquanto confirmamos sua assinatura.</p>
-          </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Verificando pagamento...</h2>
+          <p className="text-gray-500">Aguarde enquanto confirmamos sua assinatura.</p>
         </div>
-      </Layout>
+      </div>
     );
   }
 
-  // Tela de sucesso
   if (paymentStatus === 'success') {
     return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center max-w-md">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">Pagamento Confirmado!</h2>
-            <p className="text-gray-600 mb-8">{message}</p>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Ir para o Dashboard
-            </button>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">Pagamento Confirmado!</h2>
+          <p className="text-gray-600 mb-8">{message}</p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Ir para o Dashboard
+          </button>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Voltar ao Dashboard</span>
-          </button>
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Voltar ao Dashboard</span>
+        </button>
 
-          <div className="flex items-center gap-3 mb-2">
-            <Crown className="w-8 h-8 text-amber-500" />
-            <h1 className="text-2xl font-bold text-gray-800">Minha Assinatura</h1>
-          </div>
-          <p className="text-gray-500">Gerencie seu plano e pagamento</p>
+        <div className="flex items-center gap-3 mb-2">
+          <Crown className="w-8 h-8 text-amber-500" />
+          <h1 className="text-2xl font-bold text-gray-800">Minha Assinatura</h1>
         </div>
+        <p className="text-gray-500">Gerencie seu plano e pagamento</p>
+      </div>
 
-        {/* Status atual */}
-        <div className={`rounded-2xl p-6 mb-8 ${
-          isExpired
-            ? 'bg-red-50 border border-red-200'
-            : isTrialing
-            ? 'bg-blue-50 border border-blue-200'
-            : 'bg-green-50 border border-green-200'
-        }`}>
-          <div className="flex items-center gap-3 mb-2">
-            {isExpired ? (
-              <XCircle className="w-6 h-6 text-red-600" />
-            ) : (
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            )}
-            <h3 className="text-lg font-semibold text-gray-800">
-              {isExpired
-                ? 'Assinatura Expirada'
-                : isTrialing
-                ? 'Período de Teste'
-                : 'Assinatura Ativa'}
-            </h3>
-          </div>
-          <p className={`text-sm ${isExpired ? 'text-red-700' : 'text-gray-600'}`}>
-            {isExpired
-              ? 'Sua assinatura expirou. Assine um plano para continuar usando o ACS Top.'
-              : `Você tem ${daysRemaining} dia${daysRemaining !== 1 ? 's' : ''} restante${daysRemaining !== 1 ? 's' : ''}.`}
-          </p>
-        </div>
-
-        {/* Mensagens de erro/cancelamento */}
-        {(paymentStatus === 'error' || paymentStatus === 'cancelled') && (
-          <div className={`rounded-xl p-4 mb-6 flex items-center gap-3 ${
-            paymentStatus === 'error' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-          }`}>
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="text-sm">{message}</p>
-          </div>
-        )}
-
-        {/* Toggle mensal/anual */}
-        <div className="flex items-center justify-center gap-4 mb-8">
-          <span className={`text-sm font-medium ${selectedPlan === 'monthly' ? 'text-blue-700' : 'text-gray-500'}`}>
-            Mensal
-          </span>
-          <button
-            onClick={() => setSelectedPlan(selectedPlan === 'monthly' ? 'yearly' : 'monthly')}
-            className={`relative w-14 h-7 rounded-full transition-colors ${
-              selectedPlan === 'yearly' ? 'bg-blue-600' : 'bg-gray-300'
-            }`}
-          >
-            <div className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
-              selectedPlan === 'yearly' ? 'translate-x-7' : 'translate-x-0.5'
-            }`} />
-          </button>
-          <span className={`text-sm font-medium ${selectedPlan === 'yearly' ? 'text-blue-700' : 'text-gray-500'}`}>
-            Anual
-          </span>
-          {selectedPlan === 'yearly' && (
-            <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              Economia de R$59,00
-            </span>
+      {/* Status atual */}
+      <div className={`rounded-2xl p-6 mb-8 ${
+        isExpired
+          ? 'bg-red-50 border border-red-200'
+          : isTrialing
+          ? 'bg-blue-50 border border-blue-200'
+          : 'bg-green-50 border border-green-200'
+      }`}>
+        <div className="flex items-center gap-3 mb-2">
+          {isExpired ? (
+            <XCircle className="w-6 h-6 text-red-600" />
+          ) : (
+            <CheckCircle className="w-6 h-6 text-green-600" />
           )}
+          <h3 className="text-lg font-semibold text-gray-800">
+            {isExpired
+              ? 'Assinatura Expirada'
+              : isTrialing
+              ? 'Período de Teste'
+              : 'Assinatura Ativa'}
+          </h3>
         </div>
+        <p className={`text-sm ${isExpired ? 'text-red-700' : 'text-gray-600'}`}>
+          {isExpired
+            ? 'Sua assinatura expirou. Assine um plano para continuar usando o ACS Top.'
+            : `Você tem ${daysRemaining} dia${daysRemaining !== 1 ? 's' : ''} restante${daysRemaining !== 1 ? 's' : ''}.`}
+        </p>
+      </div>
 
-        {/* Cards de planos */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Plano Mensal */}
-          <div
-            onClick={() => setSelectedPlan('monthly')}
-            className={`rounded-2xl p-6 cursor-pointer transition-all border-2 ${
-              selectedPlan === 'monthly'
-                ? 'border-blue-500 bg-white shadow-lg shadow-blue-100'
-                : 'border-gray-200 bg-white hover:border-gray-300'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-800">Plano Mensal</h3>
-              <Zap className={`w-6 h-6 ${selectedPlan === 'monthly' ? 'text-blue-500' : 'text-gray-400'}`} />
-            </div>
+      {/* Mensagens de erro/cancelamento */}
+      {(paymentStatus === 'error' || paymentStatus === 'cancelled') && (
+        <div className={`rounded-xl p-4 mb-6 flex items-center gap-3 ${
+          paymentStatus === 'error' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+        }`}>
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <p className="text-sm">{message}</p>
+        </div>
+      )}
 
-            <div className="mb-4">
-              <span className="text-sm text-gray-400 line-through">R$ 34,90</span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-gray-800">R$ 29,90</span>
-                <span className="text-gray-500">/mês</span>
-              </div>
-            </div>
+      {/* Toggle mensal/anual */}
+      <div className="flex items-center justify-center gap-4 mb-8">
+        <span className={`text-sm font-medium ${selectedPlan === 'monthly' ? 'text-blue-700' : 'text-gray-500'}`}>
+          Mensal
+        </span>
+        <button
+          onClick={() => setSelectedPlan(selectedPlan === 'monthly' ? 'yearly' : 'monthly')}
+          className={`relative w-14 h-7 rounded-full transition-colors ${
+            selectedPlan === 'yearly' ? 'bg-blue-600' : 'bg-gray-300'
+          }`}
+        >
+          <div className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+            selectedPlan === 'yearly' ? 'translate-x-7' : 'translate-x-0.5'
+          }`} />
+        </button>
+        <span className={`text-sm font-medium ${selectedPlan === 'yearly' ? 'text-blue-700' : 'text-gray-500'}`}>
+          Anual
+        </span>
+        {selectedPlan === 'yearly' && (
+          <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            Economia de R$59,00
+          </span>
+        )}
+      </div>
 
-            <ul className="space-y-3">
-              {['Acesso completo', 'Cadastro ilimitado de famílias', 'Visitas ilimitadas', 'Relatórios completos', 'Notificações inteligentes', 'Modo offline'].map((item) => (
-                <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+      {/* Cards de planos */}
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        {/* Plano Mensal */}
+        <div
+          onClick={() => setSelectedPlan('monthly')}
+          className={`rounded-2xl p-6 cursor-pointer transition-all border-2 ${
+            selectedPlan === 'monthly'
+              ? 'border-blue-500 bg-white shadow-lg shadow-blue-100'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-800">Plano Mensal</h3>
+            <Zap className={`w-6 h-6 ${selectedPlan === 'monthly' ? 'text-blue-500' : 'text-gray-400'}`} />
           </div>
 
-          {/* Plano Anual */}
-          <div
-            onClick={() => setSelectedPlan('yearly')}
-            className={`rounded-2xl p-6 cursor-pointer transition-all border-2 relative ${
-              selectedPlan === 'yearly'
-                ? 'border-blue-500 bg-white shadow-lg shadow-blue-100'
-                : 'border-gray-200 bg-white hover:border-gray-300'
-            }`}
-          >
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full flex items-center gap-1">
-                <Star className="w-3 h-3" />
-                MELHOR OFERTA
-              </span>
+          <div className="mb-4">
+            <span className="text-sm text-gray-400 line-through">R$ 34,90</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-gray-800">R$ 29,90</span>
+              <span className="text-gray-500">/mês</span>
             </div>
-
-            <div className="flex items-center justify-between mb-4 mt-2">
-              <h3 className="text-lg font-bold text-gray-800">Plano Anual</h3>
-              <Crown className={`w-6 h-6 ${selectedPlan === 'yearly' ? 'text-amber-500' : 'text-gray-400'}`} />
-            </div>
-
-            <div className="mb-4">
-              <span className="text-sm text-gray-400 line-through">R$ 349,90</span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-gray-800">R$ 299,90</span>
-                <span className="text-gray-500">/ano</span>
-              </div>
-              <p className="text-xs text-green-600 font-medium mt-1">Equivale a R$ 24,99/mês</p>
-            </div>
-
-            <ul className="space-y-3">
-              {['Tudo do plano mensal', 'Economia de R$ 59,00/ano', 'Prioridade no suporte', 'Atualizações antecipadas', 'Backup automático', 'Oferta por tempo limitado'].map((item) => (
-                <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
           </div>
+
+          <ul className="space-y-3">
+            {['Acesso completo', 'Cadastro ilimitado de famílias', 'Visitas ilimitadas', 'Relatórios completos', 'Notificações inteligentes', 'Modo offline'].map((item) => (
+              <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* Botão assinar */}
-        <div className="text-center mb-8">
-          <button
-            onClick={handleSubscribe}
-            disabled={isLoading}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 mx-auto"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Processando...
-              </>
-            ) : (
-              <>
-                <CreditCard className="w-5 h-5" />
-                Assinar Agora — {selectedPlan === 'monthly' ? 'R$ 29,90/mês' : 'R$ 299,90/ano'}
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Garantia */}
-        <div className="bg-gray-50 rounded-2xl p-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Shield className="w-5 h-5 text-green-600" />
-            <h4 className="font-semibold text-gray-800">Garantia de 7 dias</h4>
+        {/* Plano Anual */}
+        <div
+          onClick={() => setSelectedPlan('yearly')}
+          className={`rounded-2xl p-6 cursor-pointer transition-all border-2 relative ${
+            selectedPlan === 'yearly'
+              ? 'border-blue-500 bg-white shadow-lg shadow-blue-100'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+          }`}
+        >
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full flex items-center gap-1">
+              <Star className="w-3 h-3" />
+              MELHOR OFERTA
+            </span>
           </div>
-          <p className="text-sm text-gray-500 max-w-md mx-auto">
-            Se não ficar satisfeito, devolvemos 100% do seu dinheiro em até 7 dias após a assinatura. Sem perguntas.
-          </p>
+
+          <div className="flex items-center justify-between mb-4 mt-2">
+            <h3 className="text-lg font-bold text-gray-800">Plano Anual</h3>
+            <Crown className={`w-6 h-6 ${selectedPlan === 'yearly' ? 'text-amber-500' : 'text-gray-400'}`} />
+          </div>
+
+          <div className="mb-4">
+            <span className="text-sm text-gray-400 line-through">R$ 349,90</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-gray-800">R$ 299,90</span>
+              <span className="text-gray-500">/ano</span>
+            </div>
+            <p className="text-xs text-green-600 font-medium mt-1">Equivale a R$ 24,99/mês</p>
+          </div>
+
+          <ul className="space-y-3">
+            {['Tudo do plano mensal', 'Economia de R$ 59,00/ano', 'Prioridade no suporte', 'Atualizações antecipadas', 'Backup automático', 'Oferta por tempo limitado'].map((item) => (
+              <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
-    </Layout>
+
+      {/* Botão assinar */}
+      <div className="text-center mb-8">
+        <button
+          onClick={handleSubscribe}
+          disabled={isLoading}
+          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 mx-auto"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Processando...
+            </>
+          ) : (
+            <>
+              <CreditCard className="w-5 h-5" />
+              Assinar Agora — {selectedPlan === 'monthly' ? 'R$ 29,90/mês' : 'R$ 299,90/ano'}
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Garantia */}
+      <div className="bg-gray-50 rounded-2xl p-6 text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Shield className="w-5 h-5 text-green-600" />
+          <h4 className="font-semibold text-gray-800">Garantia de 7 dias</h4>
+        </div>
+        <p className="text-sm text-gray-500 max-w-md mx-auto">
+          Se não ficar satisfeito, devolvemos 100% do seu dinheiro em até 7 dias após a assinatura. Sem perguntas.
+        </p>
+      </div>
+    </div>
   );
 }
