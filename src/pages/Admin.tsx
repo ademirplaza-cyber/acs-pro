@@ -682,13 +682,21 @@ export const Admin: React.FC = () => {
                             <CheckCircle2 className="w-3 h-3" /> Desbloquear
                           </button>
                         )}
-                        <button
+                                                <button
                           onClick={() => handleRenew(u.id, 30)}
                           className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs rounded-lg transition-all flex items-center gap-1"
                           title="Renovar 30 dias"
                         >
-                          <Calendar className="w-3 h-3" /> +30 dias
+                          <Calendar className="w-3 h-3" /> +30d
                         </button>
+                        <button
+                          onClick={() => handleRenew(u.id, 365)}
+                          className="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs rounded-lg transition-all flex items-center gap-1"
+                          title="Renovar 1 ano"
+                        >
+                          <Calendar className="w-3 h-3" /> +1 ano
+                        </button>
+
                         <button
                           onClick={() => openEditForm(u)}
                           className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-all flex items-center gap-1"
