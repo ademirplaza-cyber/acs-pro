@@ -357,8 +357,7 @@ export function exportFamilyPDF(family: Family, people: Person[], agentName: str
       doc.text('Condicoes:', marginLeft + 2, y);
       y += 1;
 
-      let badgeX = marginLeft + 2;
-      const badgeY = y + 4;
+            let badgeX = marginLeft + 2;
       const maxX = pageWidth - marginRight;
 
       for (const cond of conditions) {

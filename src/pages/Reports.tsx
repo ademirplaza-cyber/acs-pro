@@ -51,13 +51,6 @@ const calcAgeUtil = (bd: string): number => {
   return a;
 };
 
-const formatDateUtil = (dateStr: string): string => {
-  try {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
-  } catch {
-    return dateStr;
-  }
-};
 
 const dwellingLabelUtil = (type?: string): string => {
   if (type === 'HOUSE') return 'Casa';
