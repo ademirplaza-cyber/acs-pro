@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -35,14 +34,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'ACS Pro <onboarding@resend.dev>',
+        from: 'ACS Top <onboarding@resend.dev>',
         to: [email],
-        subject: 'Código de Recuperação de Senha - ACS Pro',
+        subject: 'Código de Recuperação de Senha - ACS Top',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 24px;">🏥 ACS Pro</h1>
-              <p style="color: #bfdbfe; margin: 8px 0 0 0; font-size: 14px;">Saúde da Família</p>
+              <h1 style="color: white; margin: 0; font-size: 24px;">🏥 ACS Top</h1>
+              <p style="color: #bfdbfe; margin: 8px 0 0 0; font-size: 14px;">Saúde Integrada</p>
             </div>
             <div style="background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;">
               <h2 style="color: #1e293b; margin-top: 0;">Recuperação de Senha</h2>
@@ -61,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               </p>
               <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
               <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-                ACS Pro - Sistema de Gestão para Agentes Comunitários de Saúde<br/>
+                ACS Top - Sistema de Gestão para Agentes Comunitários de Saúde<br/>
                 Este é um email automático, não responda.
               </p>
             </div>

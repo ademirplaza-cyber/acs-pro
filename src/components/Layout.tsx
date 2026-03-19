@@ -1,61 +1,55 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
-import {
-  LayoutDashboard,
-  Users,
-  ClipboardList,
-  BarChart3,
-  Bell,
-  LogOut,
+import { api } from '../services/api';
+import { notificationService } from '../services/notificationService';
+import { 
+  LayoutDashboard, 
+  Users, 
+  ClipboardList, 
+  UserCog, 
+  LogOut, 
   Menu,
+  Activity,
   X,
-  Shield,
-  MessageSquare,
-  ChevronRight,
+  Bell,
+  BellRing,
+  PieChart,
   WifiOff,
+  Check,
+  Trash2,
+  ExternalLink,
+  CheckCheck,
   CreditCard,
   Crown
 } from 'lucide-react';
-import { api } from '../services/api';
 
-interface LayoutProps {
-  children: React.ReactNode;
+interface NotificationItem {
+  id: string;
+  type: string;
+  priority: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  action_url?: string;
 }
 
-export default function Layout({ children }: LayoutProps) {
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const isActive = (path: string) => location.pathname === path;
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
-  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (user?.id) {
-      api.getUnreadCount(user.id).then(count => setUnreadCount(count));
-      const interval = setInterval(() => {
-        api.getUnreadCount(user.id).then(count => setUnreadCount(count));
-      }, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [user?.id]);
-
-  // Calcular dias restantes da assinatura
-  useEffect(() => {
-    if (user) {
-      const createdAt = new Date(user.createdAt || Date.now());
-      const expiresAt = user.subscriptionExpiresAt
-        ? new Date(user.subscriptionExpiresAt)
-        : new Date(createdAt.getTime() + 30 * 24 * 60 * 60 * 1000);
-      const now = new Date();
-      const diff = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      setDaysRemaining(diff);
-    }
-  }, [user]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -68,124 +62,350 @@ export default function Layout({ children }: LayoutProps) {
     };
   }, []);
 
+  const getDaysRemaining = () => {
+    if (!user?.subscriptionExpiresAt || user.role === UserRole.ADMIN) return null;
+    const expiration = new Date(user.subscriptionExpiresAt);
+    const today = new Date();
+    const diff = expiration.getTime() - today.getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const daysRemaining = getDaysRemaining();
+
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(registration => {
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'activated') {
-                setShowUpdatePrompt(true);
-              }
-            });
-          }
-        });
-      });
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
     }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  useEffect(() => {
+    if (!user) return;
+
+    const loadAndCheck = async () => {
+      try {
+        if (isOnline) {
+          const isAdmin = user.role === 'ADMIN';
+          await notificationService.runAllChecks(user.id, isAdmin);
+        }
+        await loadNotifications();
+      } catch (error) {
+        console.error('Erro ao verificar notificações:', error);
+      }
+    };
+
+    loadAndCheck();
+
+    const interval = setInterval(loadAndCheck, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [user, isOnline]);
+
+  const loadNotifications = async () => {
+    if (!user) return;
+    try {
+      const data = await api.getNotifications(user.id);
+      setNotifications(data.slice(0, 15));
+      const count = data.filter((n: NotificationItem) => !n.is_read).length;
+      
+      if (count > unreadCount && unreadCount > 0) {
+        setIsAnimating(true);
+        setTimeout(() => setIsAnimating(false), 2000);
+      }
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Erro ao carregar notificações:', error);
+    }
   };
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Famílias', href: '/families', icon: Users },
-    { name: 'Visitas', href: '/visits', icon: ClipboardList },
-    { name: 'Relatórios', href: '/reports', icon: BarChart3 },
-    { name: 'Reunião', href: '/meeting', icon: MessageSquare },
-    { name: 'Notificações', href: '/notifications', icon: Bell, badge: unreadCount },
-  ];
-
-  const bottomNav = [
-    { name: 'Início', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Famílias', href: '/families', icon: Users },
-    { name: 'Visitas', href: '/visits', icon: ClipboardList },
-    { name: 'Alertas', href: '/notifications', icon: Bell, badge: unreadCount },
-  ];
-
-  const isActive = (href: string) => location.pathname === href;
-
-  const pageTitle = () => {
-    const path = location.pathname;
-    if (path === '/dashboard') return 'Dashboard';
-    if (path === '/families') return 'Famílias';
-    if (path.startsWith('/families/')) return 'Detalhes da Família';
-    if (path === '/visits') return 'Visitas';
-    if (path === '/reports') return 'Relatórios';
-    if (path === '/notifications') return 'Notificações';
-    if (path === '/meeting') return 'Reunião';
-    if (path === '/admin') return 'Administração';
-    if (path === '/subscription') return 'Assinatura';
-    return 'ACS Top';
+  const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await api.markAsRead(id);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+    );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
   };
+
+  const handleMarkAllRead = async () => {
+    if (!user) return;
+    await api.markAllAsRead(user.id);
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+  };
+
+  const handleDeleteNotification = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const wasUnread = notifications.find((n) => n.id === id && !n.is_read);
+    await api.deleteNotification(id);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    if (wasUnread) setUnreadCount((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleClickNotification = (notification: NotificationItem) => {
+    if (!notification.is_read) {
+      api.markAsRead(notification.id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+    if (notification.action_url) {
+      navigate(notification.action_url);
+      setIsDropdownOpen(false);
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'URGENT': return 'border-l-red-500 bg-red-50';
+      case 'HIGH': return 'border-l-orange-500 bg-orange-50';
+      case 'MEDIUM': return 'border-l-yellow-500 bg-yellow-50';
+      case 'LOW': return 'border-l-blue-500 bg-blue-50';
+      default: return 'border-l-gray-500 bg-gray-50';
+    }
+  };
+
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMin < 1) return 'Agora';
+    if (diffMin < 60) return `${diffMin}min`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  const NotificationBellComponent = ({ isMobile = false }: { isMobile?: boolean }) => {
+    return (
+      <div className="relative" ref={!isMobile ? dropdownRef : undefined}>
+        <button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          className={`relative p-2 rounded-lg transition-all duration-200 ${
+            isDropdownOpen
+              ? 'bg-blue-100 text-blue-600'
+              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+          } ${isAnimating ? 'animate-bounce' : ''}`}
+          title={unreadCount > 0 ? `${unreadCount} notificação(ões) não lida(s)` : 'Notificações'}
+        >
+          {unreadCount > 0 ? (
+            <BellRing size={22} className={isAnimating ? 'text-orange-500' : ''} />
+          ) : (
+            <Bell size={22} />
+          )}
+
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-lg">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </button>
+
+        {isDropdownOpen && (
+          <div className={`absolute ${isMobile ? 'right-0' : 'right-0'} top-full mt-2 w-80 sm:w-96 max-h-[450px] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden`}>
+            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+              <div className="flex items-center gap-2">
+                <Bell size={16} />
+                <span className="font-semibold text-sm">Notificações</span>
+                {unreadCount > 0 && (
+                  <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="flex items-center gap-1 text-xs text-white/80 hover:text-white"
+                >
+                  <CheckCheck size={14} />
+                  Ler todas
+                </button>
+              )}
+            </div>
+
+            <div className="max-h-[320px] overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                  <Bell size={36} strokeWidth={1} />
+                  <p className="mt-2 text-sm">Nenhuma notificação</p>
+                  <p className="text-xs">Tudo tranquilo!</p>
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    onClick={() => handleClickNotification(notification)}
+                    className={`flex items-start gap-2 px-3 py-2.5 border-l-4 border-b border-gray-100 cursor-pointer transition-all hover:brightness-95 ${
+                      getPriorityColor(notification.priority)
+                    } ${!notification.is_read ? 'font-medium' : 'opacity-60'}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs truncate ${!notification.is_read ? 'text-gray-900' : 'text-gray-600'}`}>
+                        {notification.title}
+                      </p>
+                      <p className="text-[11px] text-gray-500 line-clamp-2 mt-0.5">{notification.message}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-gray-400">{formatTime(notification.created_at)}</span>
+                        {notification.action_url && <ExternalLink size={9} className="text-gray-400" />}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-0.5 shrink-0">
+                      {!notification.is_read && (
+                        <button
+                          onClick={(e) => handleMarkAsRead(notification.id, e)}
+                          className="p-1 rounded hover:bg-white/50 text-gray-400 hover:text-green-600"
+                          title="Marcar como lida"
+                        >
+                          <Check size={12} />
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => handleDeleteNotification(notification.id, e)}
+                        className="p-1 rounded hover:bg-white/50 text-gray-400 hover:text-red-600"
+                        title="Excluir"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {notifications.length > 0 && (
+              <div className="px-4 py-2 bg-gray-50 border-t border-gray-200">
+                <button
+                  onClick={() => { navigate('/notifications'); setIsDropdownOpen(false); }}
+                  className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Ver todas as notificações →
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const NavItem = ({ to, icon: Icon, label, mobile }: { to: string; icon: any; label: string; mobile?: boolean }) => (
+    <Link
+      to={to}
+      className={`flex items-center transition-colors ${
+        mobile 
+          ? `flex-col justify-center space-y-1 flex-1 py-2 h-full ${isActive(to) ? 'text-blue-600' : 'text-slate-500'}`
+          : `space-x-3 px-4 py-4 md:py-3 rounded-xl mb-1 ${
+              isActive(to) 
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                : 'text-slate-600 hover:bg-slate-100'
+            }`
+      }`}
+      onClick={() => setIsSidebarOpen(false)}
+    >
+      <Icon size={mobile ? 24 : 22} className={!mobile && isActive(to) ? 'text-white' : ''} />
+      <span className={`${mobile ? 'text-[10px] font-bold uppercase tracking-tighter' : 'font-medium text-base'}`}>{label}</span>
+      {mobile && isActive(to) && <span className="absolute bottom-1 w-1 h-1 bg-blue-600 rounded-full"></span>}
+    </Link>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Indicador offline */}
-      {!isOnline && (
-        <div className="bg-amber-500 text-white text-center py-1 px-4 text-sm flex items-center justify-center gap-2 fixed top-0 left-0 right-0 z-50">
-          <WifiOff className="w-4 h-4" />
-          <span>Sem conexão com a internet</span>
-        </div>
-      )}
-
-      {/* Prompt de atualização */}
-      {showUpdatePrompt && (
-        <div className="bg-blue-600 text-white text-center py-2 px-4 text-sm fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-3">
-          <span>Nova versão disponível!</span>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-white text-blue-600 px-3 py-1 rounded text-xs font-semibold"
-          >
-            Atualizar
-          </button>
-        </div>
-      )}
-
-      {/* Sidebar Desktop */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-gray-200 shadow-sm">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-            <span className="text-white text-lg">🏥</span>
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-800">ACS Top</h1>
-            <p className="text-xs text-gray-500">Saúde da Família</p>
-          </div>
-        </div>
-
-        {/* Perfil do usuário */}
-        <div className="px-4 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+      {/* Header Mobile */}
+      <div className="md:hidden fixed w-full bg-white shadow-sm z-30 h-16 flex items-center justify-between px-4 transition-all">
+        <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-3 -ml-3 text-slate-600 hover:bg-slate-100 rounded-full"
+        >
+          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+        
+        {/* Logo Mobile Header */}
+        <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+              <Activity size={18} className="text-white" strokeWidth={2.5} />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate">{user?.name || 'Usuário'}</p>
-              <div className="flex items-center gap-1">
-                <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
-                <span className="text-xs text-gray-500">{isOnline ? 'Online' : 'Offline'}</span>
+            <span className="font-bold text-xl text-blue-600">ACS Top</span>
+        </div>
+
+        <div className="flex items-center space-x-1">
+          {!isOnline && <WifiOff size={18} className="text-orange-500" />}
+          <NotificationBellComponent isMobile={true} />
+        </div>
+      </div>
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed md:static inset-y-0 left-0 w-[280px] bg-white shadow-2xl md:shadow-none transform transition-transform duration-300 ease-out z-40 flex flex-col
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        {/* Logo Sidebar Desktop */}
+        <div className="p-6 border-b border-slate-100 hidden md:flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+              <Activity size={22} className="text-white" strokeWidth={2.5} />
+            </div>
+            <div>
+                <span className="text-2xl font-bold text-blue-600 block leading-none">ACS Top</span>
+                <p className="text-xs text-slate-400 font-medium">Saúde Integrada</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Logo Sidebar Mobile */}
+        <div className="md:hidden p-4 border-b border-slate-100 flex items-center justify-between h-16">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+                <Activity size={18} className="text-white" strokeWidth={2.5} />
               </div>
+              <span className="text-xl font-bold text-blue-600">Menu</span>
             </div>
-          </div>
+            <button 
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 -mr-2 text-slate-400 hover:text-slate-600"
+            >
+              <X size={24} />
+            </button>
+        </div>
 
-          {/* Badge de assinatura */}
+        {/* Menu Items */}
+        <div className="p-4 flex flex-col flex-1 overflow-y-auto">
+          <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
+          <NavItem to="/reports" icon={PieChart} label="Relatórios e Grupos" />
+          <NavItem to="/visits" icon={ClipboardList} label="Visitas Pendentes" />
+          <NavItem to="/families" icon={Users} label="Famílias & Pacientes" />
+          <NavItem to="/notifications" icon={Bell} label="Notificações" />
+          <NavItem to="/subscription" icon={CreditCard} label="Assinatura" />
+          
+          {user?.role === UserRole.ADMIN && (
+            <div className="pt-4 mt-4 border-t border-slate-100">
+              <p className="px-4 text-xs font-semibold text-slate-400 uppercase mb-2">Administração</p>
+              <NavItem to="/admin" icon={UserCog} label="Gerenciar Agentes" />
+            </div>
+          )}
+        </div>
+
+        {/* Footer Sidebar */}
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50 safe-area-bottom">
           {daysRemaining !== null && (
             <button
-              onClick={() => navigate('/subscription')}
-              className={`mt-3 w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+              onClick={() => { navigate('/subscription'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium mb-3 transition-colors ${
                 daysRemaining <= 0
-                  ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                  ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
                   : daysRemaining <= 7
-                  ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                  : 'bg-green-50 text-green-700 hover:bg-green-100'
+                  ? 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200'
+                  : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
               }`}
             >
-              <Crown className="w-4 h-4" />
+              <Crown size={14} />
               <span>
                 {daysRemaining <= 0
                   ? 'Assinatura expirada'
@@ -196,269 +416,97 @@ export default function Layout({ children }: LayoutProps) {
               </span>
             </button>
           )}
-        </div>
 
-        {/* Navegação */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                isActive(item.href)
-                  ? 'bg-blue-50 text-blue-700 shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-              }`}
-            >
-              <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-blue-600' : 'text-gray-400'}`} />
-              <span className="flex-1">{item.name}</span>
-              {item.badge && item.badge > 0 ? (
-                <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {item.badge > 9 ? '9+' : item.badge}
-                </span>
-              ) : null}
-              {isActive(item.href) && <ChevronRight className="w-4 h-4 text-blue-400" />}
-            </Link>
-          ))}
+          <div className="hidden md:flex items-center justify-between mb-4 px-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-slate-600">Notificações</span>
+                {!isOnline && <WifiOff size={16} className="text-orange-500" />}
+              </div>
+              <NotificationBellComponent />
+          </div>
 
-          {/* Link Assinatura */}
-          <Link
-            to="/subscription"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              isActive('/subscription')
-                ? 'bg-blue-50 text-blue-700 shadow-sm'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-            }`}
+          <div className="flex items-center space-x-3 mb-4 px-2">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+              {user?.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-slate-900 truncate">{user?.name}</p>
+              <p className="text-xs text-slate-500 truncate">{user?.role === UserRole.ADMIN ? 'Administrador' : 'Agente de Saúde'}</p>
+            </div>
+          </div>
+          <button 
+            onClick={logout}
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors shadow-sm font-medium"
           >
-            <CreditCard className={`w-5 h-5 ${isActive('/subscription') ? 'text-blue-600' : 'text-gray-400'}`} />
-            <span className="flex-1">Assinatura</span>
-            {isActive('/subscription') && <ChevronRight className="w-4 h-4 text-blue-400" />}
-          </Link>
-
-          {/* Admin */}
-          {user?.role === UserRole.ADMIN && (
-            <Link
-              to="/admin"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                isActive('/admin')
-                  ? 'bg-blue-50 text-blue-700 shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-              }`}
-            >
-              <Shield className={`w-5 h-5 ${isActive('/admin') ? 'text-blue-600' : 'text-gray-400'}`} />
-              <span className="flex-1">Administração</span>
-              {isActive('/admin') && <ChevronRight className="w-4 h-4 text-blue-400" />}
-            </Link>
-          )}
-        </nav>
-
-        {/* Logout */}
-        <div className="p-3 border-t border-gray-100">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 w-full transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Sair</span>
+            <LogOut size={18} />
+            <span>Sair do Sistema</span>
           </button>
         </div>
       </aside>
 
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <aside className="fixed inset-y-0 left-0 w-72 bg-white shadow-xl z-50 flex flex-col">
-            {/* Header mobile sidebar */}
-            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-                  <span className="text-white text-sm">🏥</span>
-                </div>
-                <h1 className="text-lg font-bold text-gray-800">ACS Top</h1>
-              </div>
-              <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-gray-100">
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Perfil mobile */}
-            <div className="px-4 py-3 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{user?.name || 'Usuário'}</p>
-                  <p className="text-xs text-gray-500">{user?.email || ''}</p>
-                </div>
-              </div>
-
-              {daysRemaining !== null && (
-                <button
-                  onClick={() => { navigate('/subscription'); setSidebarOpen(false); }}
-                  className={`mt-3 w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    daysRemaining <= 0
-                      ? 'bg-red-50 text-red-700'
-                      : daysRemaining <= 7
-                      ? 'bg-amber-50 text-amber-700'
-                      : 'bg-green-50 text-green-700'
-                  }`}
-                >
-                  <Crown className="w-4 h-4" />
-                  <span>
-                    {daysRemaining <= 0
-                      ? 'Assinatura expirada'
-                      : daysRemaining <= 7
-                      ? `Expira em ${daysRemaining} dia${daysRemaining !== 1 ? 's' : ''}`
-                      : `${daysRemaining} dias restantes`
-                    }
-                  </span>
-                </button>
-              )}
-            </div>
-
-            {/* Nav mobile */}
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    isActive(item.href)
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <span className="flex-1">{item.name}</span>
-                  {item.badge && item.badge > 0 ? (
-                    <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {item.badge > 9 ? '9+' : item.badge}
-                    </span>
-                  ) : null}
-                </Link>
-              ))}
-
-              <Link
-                to="/subscription"
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  isActive('/subscription')
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <CreditCard className={`w-5 h-5 ${isActive('/subscription') ? 'text-blue-600' : 'text-gray-400'}`} />
-                <span className="flex-1">Assinatura</span>
-              </Link>
-
-              {user?.role === UserRole.ADMIN && (
-                <Link
-                  to="/admin"
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    isActive('/admin')
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Shield className={`w-5 h-5 ${isActive('/admin') ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <span className="flex-1">Administração</span>
-                </Link>
-              )}
-            </nav>
-
-            <div className="p-3 border-t border-gray-100">
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 w-full"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>Sair</span>
-              </button>
-            </div>
-          </aside>
-        </div>
+      {/* Overlay Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
       )}
 
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Header mobile */}
-        <header className={`bg-white border-b border-gray-200 sticky ${!isOnline ? 'top-7' : 'top-0'} z-30 lg:hidden`}>
-          <div className="flex items-center justify-between px-4 py-3">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-lg hover:bg-gray-100"
-            >
-              <Menu className="w-5 h-5 text-gray-600" />
-            </button>
-            <h1 className="text-lg font-semibold text-gray-800">{pageTitle()}</h1>
-            <Link to="/notifications" className="p-2 rounded-lg hover:bg-gray-100 relative">
-              <Bell className="w-5 h-5 text-gray-600" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </Link>
-          </div>
-        </header>
-
-        {/* Header desktop */}
-        <header className={`bg-white border-b border-gray-200 sticky ${!isOnline ? 'top-7' : 'top-0'} z-30 hidden lg:block`}>
-          <div className="flex items-center justify-between px-6 py-3">
-            <h1 className="text-xl font-semibold text-gray-800">{pageTitle()}</h1>
-            <div className="flex items-center gap-4">
-              {!isOnline && (
-                <div className="flex items-center gap-1 text-amber-600 text-sm">
-                  <WifiOff className="w-4 h-4" />
-                  <span>Offline</span>
-                </div>
-              )}
-              <Link to="/notifications" className="p-2 rounded-lg hover:bg-gray-100 relative">
-                <Bell className="w-5 h-5 text-gray-600" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        {/* Conteúdo da página */}
-        <main className="p-4 lg:p-6 pb-20 lg:pb-6">
-          {children}
-        </main>
-      </div>
-
-      {/* Bottom nav mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30 lg:hidden">
-        <div className="flex items-center justify-around py-2">
-          {bottomNav.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={`flex flex-col items-center gap-1 px-3 py-1 rounded-lg min-w-0 ${
-                isActive(item.href) ? 'text-blue-600' : 'text-gray-500'
-              }`}
-            >
-              <div className="relative">
-                <item.icon className="w-5 h-5" />
-                {item.badge && item.badge > 0 ? (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center" style={{ fontSize: '10px' }}>
-                    {item.badge > 9 ? '9+' : item.badge}
-                  </span>
-                ) : null}
+      {/* Conteúdo Principal */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden pt-16 md:pt-0 pb-20 md:pb-0 bg-slate-50">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-full">
+          {daysRemaining !== null && daysRemaining <= 7 && daysRemaining >= 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Bell size={20} className="text-orange-600" />
               </div>
-              <span className="text-xs truncate">{item.name}</span>
-            </Link>
-          ))}
+              <div>
+                <p className="font-semibold text-orange-800 text-sm">Assinatura expirando</p>
+                <p className="text-xs text-orange-600">
+                  Sua assinatura expira em {daysRemaining} dia(s). Entre em contato com o administrador.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!isOnline && (
+            <div className="bg-slate-800 text-white p-4 rounded-xl mb-6 flex items-center shadow-lg">
+              <div className="bg-orange-500 p-2 rounded-lg mr-3">
+                <WifiOff size={20} />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Modo Offline Ativo</p>
+                <p className="text-xs text-slate-300 mt-1">
+                  Os dados serão sincronizados quando houver conexão.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {children}
         </div>
+      </main>
+
+      {/* Navegação Mobile Bottom */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-16 flex items-center justify-around z-30 safe-area-bottom shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
+        <NavItem to="/" icon={LayoutDashboard} label="Início" mobile />
+        <NavItem to="/visits" icon={ClipboardList} label="Visitas" mobile />
+        <NavItem to="/families" icon={Users} label="Famílias" mobile />
+        <NavItem to="/reports" icon={PieChart} label="Relatórios" mobile />
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="flex flex-col items-center justify-center space-y-1 flex-1 py-2 h-full text-slate-500 relative"
+        >
+          <Menu size={24} />
+          <span className="text-[10px] font-bold uppercase tracking-tighter">Mais</span>
+          {(unreadCount > 0 || !isOnline) && (
+            <span className={`absolute top-1 right-4 w-2.5 h-2.5 rounded-full ${unreadCount > 0 ? 'bg-red-500' : 'bg-orange-500'}`}></span>
+          )}
+        </button>
       </nav>
     </div>
   );
-}
+};
+
+export { Layout };
+export default Layout;

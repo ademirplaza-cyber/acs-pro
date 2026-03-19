@@ -1,13 +1,12 @@
 import { Suspense, lazy, useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import ErrorBoundary from './components/ErrorBoundary';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Login } from './pages/Login';
 import { UserRole } from './types';
 import SplashScreen from './components/SplashScreen';
 
-// Lazy loading para performance
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const Visits = lazy(() => import('./pages/Visits').then(m => ({ default: m.Visits })));
 const Families = lazy(() => import('./pages/Families').then(m => ({ default: m.Families })));
@@ -34,13 +33,9 @@ const AppRoutes = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
-        {/* Página pública — Landing Page */}
         <Route path="/home" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-        
-        {/* Login / Registro */}
         <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
         
-        {/* Páginas protegidas */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="/visits" element={<ProtectedRoute><Visits /></ProtectedRoute>} />
@@ -55,10 +50,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } />
 
-        {/* Rota raiz: logado vai pro dashboard, não logado vai pra landing */}
         <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/home" replace />} />
-
-        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>

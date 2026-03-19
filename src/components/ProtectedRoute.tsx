@@ -1,3 +1,4 @@
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
@@ -8,7 +9,7 @@ interface ProtectedRouteProps {
   requiredRole?: UserRole;
 }
 
-export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
@@ -27,7 +28,6 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
-  // Verificar se a assinatura expirou (não bloquear admin nem a página de assinatura)
   if (user.role !== UserRole.ADMIN && location.pathname !== '/subscription') {
     const createdAt = new Date(user.createdAt || Date.now());
     const expiresAt = user.subscriptionExpiresAt
@@ -40,10 +40,13 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
     }
   }
 
-  // Verificar role
   if (requiredRole && user.role !== requiredRole) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <Layout>{children}</Layout>;
-}
+  return (
+    <Layout>
+      {children}
+    </Layout>
+  );
+};

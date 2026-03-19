@@ -11,24 +11,17 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish, minDuration = 280
   const [phase, setPhase] = useState<'logo' | 'text' | 'loading' | 'done'>('logo');
 
   useEffect(() => {
-    // Fase 1: Logo aparece (0ms)
     const t1 = setTimeout(() => setPhase('text'), 400);
-
-    // Fase 2: Texto aparece (400ms)
     const t2 = setTimeout(() => setPhase('loading'), 800);
 
-    // Fase 3: Barra de progresso (800ms)
-    // Simular progresso
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) return 100;
-        // Progresso mais rápido no início, mais lento no final
         const increment = prev < 30 ? 8 : prev < 60 ? 5 : prev < 85 ? 3 : 2;
         return Math.min(prev + increment, 100);
       });
     }, 50);
 
-    // Fase 4: Finalizar
     const t3 = setTimeout(() => {
       setProgress(100);
       setPhase('done');
@@ -88,7 +81,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish, minDuration = 280
             {/* Glow */}
             <div className="absolute inset-0 blur-2xl bg-white/20 rounded-full scale-150" />
             
-            {/* Ícone principal */}
+            {/* Ícone principal — Logo ACS Top */}
             <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-6 border border-white/20 shadow-2xl">
               <Activity size={64} className="text-white" strokeWidth={2.5} />
             </div>
@@ -110,7 +103,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish, minDuration = 280
             ACS <span className="text-blue-200">Top</span>
           </h1>
           <p className="text-blue-200/80 text-sm sm:text-base mt-2 font-medium tracking-wide">
-            Saúde Integrada
+            Saúde da Família
           </p>
         </div>
 
@@ -131,7 +124,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish, minDuration = 280
             ? 'translate-y-0 opacity-100' 
             : 'translate-y-4 opacity-0'
         }`}>
-          {/* Barra de fundo */}
           <div className="h-1.5 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
             <div
               className="h-full rounded-full transition-all duration-300 ease-out"
@@ -143,7 +135,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish, minDuration = 280
             />
           </div>
 
-          {/* Texto de status */}
           <div className="flex items-center justify-between mt-3">
             <p className="text-blue-200/50 text-[11px] font-medium">
               {progress < 30
@@ -170,7 +161,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish, minDuration = 280
         </div>
       </div>
 
-      {/* Estilos de animação inline */}
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }

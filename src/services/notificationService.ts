@@ -79,7 +79,7 @@ async function createIfNotExists(params: {
 }
 
 // ============================================
-// VERIFICAÇÕES
+// VERIFICAÇÕES DE SAÚDE (só para Agentes)
 // ============================================
 
 // 1. Visitas atrasadas (data agendada já passou e status PENDING)
@@ -201,7 +201,6 @@ async function checkPregnantWithoutCare(agentId: string): Promise<void> {
     const visits = await api.getVisits(agentId);
 
     for (const family of families) {
-      // Buscar membros de cada família
       const people = await api.getPeople(family.id);
       const pregnant = people.filter((p) => p.isPregnant);
 
@@ -324,6 +323,10 @@ async function checkDiabeticWithoutCare(agentId: string): Promise<void> {
   }
 }
 
+// ============================================
+// VERIFICAÇÕES ADMINISTRATIVAS (só para Admin)
+// ============================================
+
 // 7. Assinatura expirando (Admin verifica agentes)
 async function checkSubscriptionExpiring(agentId: string): Promise<void> {
   try {
@@ -394,20 +397,22 @@ async function checkPendingAgents(agentId: string): Promise<void> {
 
 export const notificationService = {
   async runAllChecks(agentId: string, isAdmin: boolean = false): Promise<number> {
-    console.log('🔔 Iniciando verificação de notificações...');
+    console.log(`🔔 Iniciando verificação de notificações (${isAdmin ? 'ADMIN' : 'AGENTE'})...`);
     const startTime = Date.now();
 
     try {
-      await checkOverdueVisits(agentId);
-      await checkUpcomingVisits(agentId);
-      await checkFamiliesWithoutVisit(agentId);
-      await checkPregnantWithoutCare(agentId);
-      await checkHypertensiveWithoutCare(agentId);
-      await checkDiabeticWithoutCare(agentId);
-
       if (isAdmin) {
+        // Admin recebe APENAS notificações administrativas
         await checkSubscriptionExpiring(agentId);
         await checkPendingAgents(agentId);
+      } else {
+        // Agente recebe APENAS notificações de saúde/visitas
+        await checkOverdueVisits(agentId);
+        await checkUpcomingVisits(agentId);
+        await checkFamiliesWithoutVisit(agentId);
+        await checkPregnantWithoutCare(agentId);
+        await checkHypertensiveWithoutCare(agentId);
+        await checkDiabeticWithoutCare(agentId);
       }
 
       const count = await api.getUnreadCount(agentId);
