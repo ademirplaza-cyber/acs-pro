@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import { api } from '../services/api';
 import { notificationService } from '../services/notificationService';
+import InstallBanner from './InstallBanner';
 import { 
   LayoutDashboard, 
   Users, 
@@ -489,9 +490,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
           )}
 
-          {children}
+                    {children}
         </div>
+        <InstallBanner />
       </main>
+
 
       {/* Navegação Mobile Bottom */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-16 flex items-center justify-around z-30 safe-area-bottom shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
