@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { User, UserRole, UserStatus } from '../types';
 import { api } from '../services/api';
+import { notificationService } from '../services/notificationService';
 
 // ============================================
 // CONTEXTO DE AUTENTICAÇÃO
 // Login e registro agora usam Supabase (nuvem)
+// + Notificações automáticas após login
 // ============================================
 
 interface RegisterExtraData {
@@ -26,9 +28,62 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Intervalo de checagem de notificações (30 minutos)
+const NOTIFICATION_CHECK_INTERVAL = 30 * 60 * 1000;
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const notificationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const notificationCheckRunning = useRef(false);
+
+  // ============================================
+  // NOTIFICAÇÕES AUTOMÁTICAS
+  // ============================================
+  const runNotificationCheck = useCallback(async (currentUser: User) => {
+    if (notificationCheckRunning.current) return;
+    if (!currentUser || !currentUser.id) return;
+
+    try {
+      notificationCheckRunning.current = true;
+      const isAdmin = currentUser.role === UserRole.ADMIN;
+      console.log(`🔔 Checagem automática de notificações (${isAdmin ? 'ADMIN' : 'AGENTE'})...`);
+      await notificationService.runAllChecks(currentUser.id, isAdmin);
+    } catch (error) {
+      console.error('❌ Erro na checagem automática de notificações:', error);
+    } finally {
+      notificationCheckRunning.current = false;
+    }
+  }, []);
+
+  const startNotificationScheduler = useCallback((currentUser: User) => {
+    // Limpar intervalo anterior se existir
+    if (notificationIntervalRef.current) {
+      clearInterval(notificationIntervalRef.current);
+      notificationIntervalRef.current = null;
+    }
+
+    // Executar primeira checagem após 5 segundos (dar tempo da UI carregar)
+    setTimeout(() => {
+      runNotificationCheck(currentUser);
+    }, 5000);
+
+    // Agendar checagens periódicas a cada 30 minutos
+    notificationIntervalRef.current = setInterval(() => {
+      runNotificationCheck(currentUser);
+    }, NOTIFICATION_CHECK_INTERVAL);
+
+    console.log('⏰ Scheduler de notificações iniciado (a cada 30min)');
+  }, [runNotificationCheck]);
+
+  const stopNotificationScheduler = useCallback(() => {
+    if (notificationIntervalRef.current) {
+      clearInterval(notificationIntervalRef.current);
+      notificationIntervalRef.current = null;
+      console.log('⏰ Scheduler de notificações parado');
+    }
+    notificationService.clearCache();
+  }, []);
 
   // ============================================
   // INICIALIZAR — restaurar sessão salva
@@ -48,15 +103,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               console.log('☁️ Dados atualizados do Supabase:', freshUser.name, freshUser.status);
               setUser(freshUser);
               localStorage.setItem('acs_current_user', JSON.stringify(freshUser));
+              startNotificationScheduler(freshUser);
             } else {
               // Usuário não existe mais no banco — manter local como fallback
               console.log('⚠️ Usuário não encontrado no Supabase, usando dados locais');
               setUser(parsed);
+              startNotificationScheduler(parsed);
             }
           } catch (networkError) {
             // Sem internet — usar dados locais
             console.log('📴 Sem conexão, usando sessão local');
             setUser(parsed);
+            // Não inicia scheduler sem internet
           }
         }
       } catch (error) {
@@ -68,6 +126,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     restoreSession();
+
+    // Cleanup ao desmontar
+    return () => {
+      stopNotificationScheduler();
+    };
   }, []);
 
   // ============================================
@@ -95,6 +158,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(foundUser);
       localStorage.setItem('acs_current_user', JSON.stringify(foundUser));
       console.log('✅ Usuário carregado:', foundUser.name, `(${foundUser.role})`);
+
+      // Iniciar notificações automáticas
+      startNotificationScheduler(foundUser);
+
       return true;
 
     } catch (error) {
@@ -173,6 +240,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // ============================================
   const logout = () => {
     console.log('🚪 Logout:', user?.name);
+    stopNotificationScheduler();
     setUser(null);
     localStorage.removeItem('acs_current_user');
     window.location.hash = '#/home';
