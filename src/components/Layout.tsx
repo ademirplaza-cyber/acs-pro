@@ -211,7 +211,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </button>
 
         {isDropdownOpen && (
-          <div className={`absolute ${isMobile ? 'right-0' : 'right-0'} top-full mt-2 w-80 sm:w-96 max-h-[450px] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden`}>
+          <div className={`${isMobile ? 'fixed right-2 left-2 top-16' : 'absolute right-0 top-full mt-2 w-80 sm:w-96'} max-h-[70vh] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 flex flex-col`}>
             <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
               <div className="flex items-center gap-2">
                 <Bell size={16} />
@@ -233,7 +233,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               )}
             </div>
 
-            <div className="max-h-[320px] overflow-y-auto">
+            <div className="flex-1 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-gray-400">
                   <Bell size={36} strokeWidth={1} />
