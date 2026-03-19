@@ -6,7 +6,6 @@ import { api } from '../services/api';
 import Layout from './Layout';
 import { CheckCircle2, Shield } from 'lucide-react';
 
-
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: UserRole;
@@ -161,7 +160,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
 
   // ---- VERIFICAÇÃO DE TERMOS ----
   const needsTermsAcceptance = !user.acceptedTermsAt || user.acceptedTermsAt.trim() === '';
-console.log('🔒 TERMOS:', { valor: user.acceptedTermsAt, precisa: needsTermsAcceptance });
 
   const handleAcceptTerms = async () => {
     setAcceptingTerms(true);
