@@ -213,7 +213,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email: email.toLowerCase().trim(),
         password: password,
         role: UserRole.AGENT,
-        status: UserStatus.PENDING,
+        status: UserStatus.ACTIVE,
         subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         acceptedTermsAt: '',
         createdAt: new Date().toISOString(),
