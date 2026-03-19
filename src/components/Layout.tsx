@@ -22,7 +22,8 @@ import {
   ExternalLink,
   CheckCheck,
   CreditCard,
-  Crown
+  Crown,
+  MessageSquare
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -381,6 +382,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <NavItem to="/reports" icon={PieChart} label="Relatórios e Grupos" />
           <NavItem to="/visits" icon={ClipboardList} label="Visitas Pendentes" />
           <NavItem to="/families" icon={Users} label="Famílias & Pacientes" />
+          <NavItem to="/meeting" icon={MessageSquare} label="Reunião" />
           <NavItem to="/notifications" icon={Bell} label="Notificações" />
           <NavItem to="/subscription" icon={CreditCard} label="Assinatura" />
           
