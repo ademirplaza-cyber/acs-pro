@@ -24,7 +24,7 @@ import {
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const whatsappNumber = '5511986373147';
+  const whatsappNumber = '5511986514606';
 
   const whatsappLink = (plano: string) =>
     `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
@@ -107,7 +107,7 @@ const LandingPage: React.FC = () => {
     },
     {
       q: 'Como faço para começar?',
-      a: 'Clique em "Teste Grátis", crie sua conta e comece a usar imediatamente. São 7 dias gratuitos para você conhecer todas as funcionalidades.',
+      a: 'Clique em "Teste Grátis", crie sua conta e comece a usar imediatamente. São 30 dias gratuitos para você conhecer todas as funcionalidades.',
     },
     {
       q: 'O sistema gera relatórios do e-SUS?',
@@ -195,11 +195,11 @@ const LandingPage: React.FC = () => {
                 onClick={() => navigate('/login')}
                 className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-700 font-bold rounded-xl shadow-xl hover:shadow-2xl hover:bg-gray-50 active:scale-[0.98] transition-all text-base"
               >
-                Começar Grátis — 7 dias
+                Começar Grátis — 30 dias
                 <ArrowRight size={20} />
               </button>
               <a
-                href={whatsappLink('ACS Pro')}
+                href={whatsappLink('ACS Top')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 px-8 py-4 bg-green-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl hover:bg-green-600 active:scale-[0.98] transition-all text-base"
@@ -285,7 +285,7 @@ const LandingPage: React.FC = () => {
 
               <div className="mb-6">
                 <span className="text-4xl font-extrabold text-gray-900">R$ 0</span>
-                <span className="text-gray-400 text-sm ml-1">por 7 dias</span>
+                <span className="text-gray-400 text-sm ml-1">por 30 dias</span>
               </div>
 
               <ul className="space-y-3 mb-8">
@@ -486,11 +486,11 @@ const LandingPage: React.FC = () => {
               onClick={() => navigate('/login')}
               className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-700 font-bold rounded-xl shadow-xl hover:shadow-2xl hover:bg-gray-50 active:scale-[0.98] transition-all text-base"
             >
-              Começar Grátis — 7 dias
+              Começar Grátis — 30 dias
               <ArrowRight size={20} />
             </button>
             <a
-              href={whatsappLink('ACS Pro')}
+              href={whatsappLink('ACS Top')}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 px-8 py-4 bg-green-500 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl hover:bg-green-600 active:scale-[0.98] transition-all text-base"
