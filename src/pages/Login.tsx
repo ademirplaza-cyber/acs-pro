@@ -389,7 +389,7 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleRequestCode = async (e: React.FormEvent) => {
+    const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -405,18 +405,20 @@ export const Login: React.FC = () => {
         setIsLoading(false);
         return;
       }
-      const result = await api.requestPasswordReset(resetEmail.trim());
-      if (result.success) {
-        if (result.code) {
-          setGeneratedCode(result.code);
-          setSuccess('Não foi possível enviar o email. Use o código abaixo:');
-        } else {
-          setGeneratedCode('');
-          setSuccess('Código de recuperação enviado para seu email! Verifique sua caixa de entrada e spam.');
-        }
+
+      const response = await fetch('/api/send-reset-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail.trim().toLowerCase() }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setGeneratedCode(''); // Nunca mostrar código na tela
+        setSuccess('Código de recuperação enviado para seu email! Verifique sua caixa de entrada e spam.');
         setScreenMode('FORGOT_CODE');
       } else {
-        setError(result.error || 'Erro ao gerar código. Tente novamente.');
+        setError(data.error || 'Erro ao enviar código. Tente novamente.');
       }
     } catch (err) {
       setError('Erro de conexão. Verifique sua internet.');
@@ -425,7 +427,8 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleVerifyCode = async (e: React.FormEvent) => {
+
+    const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -436,12 +439,19 @@ export const Login: React.FC = () => {
         setIsLoading(false);
         return;
       }
-      const result = await api.verifyResetCode(resetEmail.trim(), resetCode.trim());
-      if (result.success) {
+
+      const response = await fetch('/api/verify-reset-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail.trim().toLowerCase(), code: resetCode.trim() }),
+      });
+      const data = await response.json();
+
+      if (response.ok && data.valid) {
         setSuccess('Código verificado! Agora crie sua nova senha.');
         setScreenMode('FORGOT_NEWPASS');
       } else {
-        setError(result.error || 'Código inválido ou expirado.');
+        setError(data.error || 'Código inválido ou expirado.');
       }
     } catch (err) {
       setError('Erro de conexão. Verifique sua internet.');
@@ -450,7 +460,7 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+    const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -471,8 +481,19 @@ export const Login: React.FC = () => {
         setIsLoading(false);
         return;
       }
-      const result = await api.completePasswordReset(resetEmail.trim(), resetCode.trim(), newPassword);
-      if (result.success) {
+
+      const response = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: resetEmail.trim().toLowerCase(),
+          code: resetCode.trim(),
+          newPassword,
+        }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
         setSuccess('Senha redefinida com sucesso! Faça login com sua nova senha.');
         setScreenMode('LOGIN');
         setEmail(resetEmail);
@@ -483,7 +504,7 @@ export const Login: React.FC = () => {
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        setError(result.error || 'Erro ao redefinir senha.');
+        setError(data.error || 'Erro ao redefinir senha.');
       }
     } catch (err) {
       setError('Erro de conexão. Verifique sua internet.');
