@@ -159,7 +159,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
   }
 
   // ---- VERIFICAÇÃO DE TERMOS ----
-  const needsTermsAcceptance = !user.acceptedTermsAt;
+  const needsTermsAcceptance = !user.acceptedTermsAt || user.acceptedTermsAt.trim() === '';
+console.log('🔒 TERMOS:', { valor: user.acceptedTermsAt, precisa: needsTermsAcceptance });
 
   const handleAcceptTerms = async () => {
     setAcceptingTerms(true);
