@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import { api } from '../services/api';
 import Layout from './Layout';
-import { FileText, X, CheckCircle2, Shield } from 'lucide-react';
+import { CheckCircle2, Shield } from 'lucide-react';
+
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
