@@ -9,7 +9,6 @@ import {
   Shield,
   Smartphone,
   BarChart3,
-  MapPin,
   Bell,
   Check,
   ArrowRight,
@@ -19,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
   MessageCircle,
+  Wifi,
 } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
@@ -41,7 +41,7 @@ const LandingPage: React.FC = () => {
     {
       icon: ClipboardList,
       title: 'Visitas Domiciliares',
-      desc: 'Agende, registre e finalize visitas com localização GPS ou manual. Controle total da sua rotina.',
+      desc: 'Agende, registre e finalize visitas selecionando o endereço da família. Controle total da sua rotina.',
       color: 'from-green-500 to-green-600',
     },
     {
@@ -75,9 +75,9 @@ const LandingPage: React.FC = () => {
       color: 'from-indigo-500 to-indigo-600',
     },
     {
-      icon: MapPin,
-      title: 'Localização GPS',
-      desc: 'Registre a localização das visitas automaticamente ou digite o endereço manualmente.',
+      icon: Wifi,
+      title: 'Modo Offline',
+      desc: 'Continue trabalhando mesmo sem internet. As visitas e dados são salvos localmente e sincronizam quando a conexão voltar.',
       color: 'from-emerald-500 to-emerald-600',
     },
     {
@@ -99,7 +99,7 @@ const LandingPage: React.FC = () => {
     },
     {
       q: 'Funciona sem internet?',
-      a: 'O sistema tem modo offline com período de graça de 2 dias. Você pode continuar trabalhando e os dados sincronizam quando voltar a conexão.',
+      a: 'Sim! O sistema tem modo offline completo. Você pode registrar visitas, consultar famílias e continuar trabalhando normalmente. Quando a internet voltar, tudo sincroniza automaticamente.',
     },
     {
       q: 'Posso cancelar a qualquer momento?',
@@ -112,6 +112,10 @@ const LandingPage: React.FC = () => {
     {
       q: 'O sistema gera relatórios do e-SUS?',
       a: 'Sim! O ACS Top gera relatórios completos com indicadores de cobertura, produtividade, grupos prioritários (gestantes, hipertensos, diabéticos, crianças e idosos).',
+    },
+    {
+      q: 'Qual a diferença entre o plano mensal e anual?',
+      a: 'Ambos têm as mesmas funcionalidades. O plano anual oferece uma economia de mais de 15% — você paga R$ 299,90 por ano em vez de R$ 358,80 (12x R$ 29,90).',
     },
   ];
 
@@ -264,7 +268,7 @@ const LandingPage: React.FC = () => {
       {/* PLANOS */}
       {/* ============================================ */}
       <section className="py-16 sm:py-24 bg-white" id="planos">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4">
               Planos simples e acessíveis
@@ -274,10 +278,10 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             
             {/* Plano Gratuito */}
-            <div className="bg-white rounded-3xl border-2 border-gray-200 p-8 relative hover:border-gray-300 hover:shadow-lg transition-all">
+            <div className="bg-white rounded-3xl border-2 border-gray-200 p-8 relative hover:border-gray-300 hover:shadow-lg transition-all flex flex-col">
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-900">Teste Gratuito</h3>
                 <p className="text-gray-400 text-sm mt-1">Conheça o sistema sem compromisso</p>
@@ -288,7 +292,7 @@ const LandingPage: React.FC = () => {
                 <span className="text-gray-400 text-sm ml-1">por 30 dias</span>
               </div>
 
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 flex-1">
                 {[
                   'Todas as funcionalidades',
                   '1 agente de saúde',
@@ -312,27 +316,19 @@ const LandingPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Plano Básico */}
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 relative shadow-xl shadow-blue-200 hover:shadow-2xl transition-all">
-              {/* Badge popular */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <div className="flex items-center gap-1 px-4 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full shadow-lg">
-                  <Star size={12} fill="currentColor" />
-                  MAIS POPULAR
-                </div>
+            {/* Plano Mensal */}
+            <div className="bg-white rounded-3xl border-2 border-blue-200 p-8 relative hover:border-blue-300 hover:shadow-lg transition-all flex flex-col">
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-gray-900">Mensal</h3>
+                <p className="text-gray-400 text-sm mt-1">Para o agente de saúde profissional</p>
               </div>
 
               <div className="mb-6">
-                <h3 className="text-lg font-bold text-white">Básico</h3>
-                <p className="text-blue-200/70 text-sm mt-1">Para o agente de saúde profissional</p>
+                <span className="text-4xl font-extrabold text-gray-900">R$ 29,90</span>
+                <span className="text-gray-400 text-sm ml-1">/mês</span>
               </div>
 
-              <div className="mb-6">
-                <span className="text-4xl font-extrabold text-white">R$ 29,90</span>
-                <span className="text-blue-200/70 text-sm ml-1">/mês</span>
-              </div>
-
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 flex-1">
                 {[
                   'Todas as funcionalidades',
                   '1 agente de saúde',
@@ -340,7 +336,64 @@ const LandingPage: React.FC = () => {
                   'Visitas e relatórios completos',
                   'Notificações inteligentes',
                   'Dados na nuvem com backup',
-                  'Modo offline (2 dias)',
+                  'Modo offline completo',
+                  'Suporte prioritário WhatsApp',
+                  'Atualizações gratuitas',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <Check size={18} className="text-green-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600 text-sm">{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <a
+                href={whatsappLink('Mensal - R$ 29,90/mês')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <MessageCircle size={18} />
+                Assinar Mensal
+              </a>
+
+              <p className="text-gray-400 text-[11px] text-center mt-3">
+                Cancele quando quiser • Sem fidelidade
+              </p>
+            </div>
+
+            {/* Plano Anual */}
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 relative shadow-xl shadow-blue-200 hover:shadow-2xl transition-all flex flex-col">
+              {/* Badge melhor custo-benefício */}
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <div className="flex items-center gap-1 px-4 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full shadow-lg whitespace-nowrap">
+                  <Star size={12} fill="currentColor" />
+                  MELHOR CUSTO-BENEFÍCIO
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-white">Anual</h3>
+                <p className="text-blue-200/70 text-sm mt-1">Economize mais de 15% por ano</p>
+              </div>
+
+              <div className="mb-2">
+                <span className="text-4xl font-extrabold text-white">R$ 299,90</span>
+                <span className="text-blue-200/70 text-sm ml-1">/ano</span>
+              </div>
+              <p className="text-green-300 text-xs font-semibold mb-6">
+                Equivale a R$ 24,99/mês — economia de R$ 58,90
+              </p>
+
+              <ul className="space-y-3 mb-8 flex-1">
+                {[
+                  'Todas as funcionalidades',
+                  '1 agente de saúde',
+                  'Famílias ilimitadas',
+                  'Visitas e relatórios completos',
+                  'Notificações inteligentes',
+                  'Dados na nuvem com backup',
+                  'Modo offline completo',
                   'Suporte prioritário WhatsApp',
                   'Atualizações gratuitas',
                 ].map((item, i) => (
@@ -352,13 +405,13 @@ const LandingPage: React.FC = () => {
               </ul>
 
               <a
-                href={whatsappLink('Básico - R$ 29,90/mês')}
+                href={whatsappLink('Anual - R$ 299,90/ano (melhor custo-benefício)')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-3.5 px-4 bg-white text-blue-700 font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 <MessageCircle size={18} />
-                Assinar pelo WhatsApp
+                Assinar Anual
               </a>
 
               <p className="text-blue-200/40 text-[11px] text-center mt-3">
