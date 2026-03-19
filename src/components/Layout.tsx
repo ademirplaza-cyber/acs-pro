@@ -24,7 +24,8 @@ import {
   CreditCard,
   Crown,
   MessageSquare,
-  UserCircle
+  UserCircle,
+  BookOpen
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -383,7 +384,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <NavItem to="/meeting" icon={MessageSquare} label="Reunião" />
           <NavItem to="/notifications" icon={Bell} label="Notificações" />
           <NavItem to="/profile" icon={UserCircle} label="Meu Perfil" />
-          <NavItem to="/subscription" icon={CreditCard} label="Assinatura" />
+<NavItem to="/tutorial" icon={BookOpen} label="Tutorial" />
+<NavItem to="/subscription" icon={CreditCard} label="Assinatura" />
           
           {user?.role === UserRole.ADMIN && (
             <div className="pt-4 mt-4 border-t border-slate-100">

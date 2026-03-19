@@ -19,7 +19,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ defaul
 const Subscription = lazy(() => import('./pages/Subscription').then(m => ({ default: m.default })));
 const Meeting = lazy(() => import('./pages/Meeting').then(m => ({ default: m.Meeting })));
 const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
-
+const Tutorial = lazy(() => import('./pages/Tutorial').then(m => ({ default: m.Tutorial })));
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50">
     <div className="text-center">
@@ -47,7 +47,7 @@ const AppRoutes = () => {
         <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
         <Route path="/meeting" element={<ProtectedRoute><Meeting /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        
+        <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
         <Route path="/admin" element={
           <ProtectedRoute requiredRole={UserRole.ADMIN}>
             <Admin />
