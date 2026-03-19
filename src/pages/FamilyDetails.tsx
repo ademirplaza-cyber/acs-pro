@@ -288,6 +288,14 @@ export const FamilyDetails = () => {
             <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">☁️ Dados na nuvem</span>
           </p>
         </div>
+        <button
+          onClick={() => exportFamilyPDF(family, people, user?.name || 'Agente')}
+          disabled={isPeopleLoading}
+          className="bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 flex items-center space-x-2 shadow-lg disabled:opacity-50"
+        >
+          <FileDown size={18} />
+          <span>Exportar PDF</span>
+        </button>
         <button onClick={loadPeople} className="bg-white px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 flex items-center space-x-2">
           <RefreshCw size={18} /><span>Atualizar</span>
         </button>
@@ -360,7 +368,6 @@ export const FamilyDetails = () => {
           <p className="text-[10px] text-slate-600 font-medium">Alcoólatras</p>
         </div>
       </div>
-
       {/* Lista de Membros */}
       {isPeopleLoading ? (
         <div className="flex justify-center items-center h-32">
@@ -465,7 +472,8 @@ export const FamilyDetails = () => {
           })}
         </div>
       )}
-            {/* MODAL DE CADASTRO */}
+
+      {/* MODAL DE CADASTRO */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -496,7 +504,6 @@ export const FamilyDetails = () => {
                 </h3>
                 <div className="space-y-4">
 
-                  {/* Parentesco com Responsável */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Parentesco com o Responsável</label>
                     <select
@@ -647,7 +654,6 @@ export const FamilyDetails = () => {
                     </label>
                   </div>
 
-                  {/* Outras Condições */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">📋 Outras Condições</label>
                     <input type="text" value={formData.otherConditions} onChange={(e) => setFormData({...formData, otherConditions: e.target.value})}
@@ -657,7 +663,6 @@ export const FamilyDetails = () => {
                     <p className="text-xs text-slate-500 mt-1">Informe condições que não estão nas opções acima</p>
                   </div>
 
-                  {/* Gestante / Puérpera */}
                   {formData.gender === 'F' && (
                     <div className="bg-pink-50 border-2 border-pink-200 rounded-xl p-4">
                       <label className="flex items-center space-x-3 cursor-pointer mb-4">
@@ -669,7 +674,6 @@ export const FamilyDetails = () => {
 
                       {formData.isPregnant && (
                         <div className="space-y-4">
-                          {/* Toggle Gestante ↔ Puérpera */}
                           <div className="flex rounded-lg overflow-hidden border-2 border-pink-300">
                             <button type="button" onClick={() => setFormData({...formData, isPuerperium: false})}
                               className={`flex-1 py-3 px-4 text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
@@ -723,7 +727,6 @@ export const FamilyDetails = () => {
                     </div>
                   )}
 
-                  {/* Bolsa Família */}
                   <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
                     <label className="flex items-center space-x-3 cursor-pointer mb-4">
                       <input type="checkbox" checked={formData.receivesBolsaFamilia} onChange={(e) => setFormData({...formData, receivesBolsaFamilia: e.target.checked})}
@@ -740,7 +743,6 @@ export const FamilyDetails = () => {
                     )}
                   </div>
 
-                  {/* Doenças e Medicamentos */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-2">Doenças Crônicas</label>
@@ -756,7 +758,6 @@ export const FamilyDetails = () => {
                     </div>
                   </div>
 
-                  {/* Doenças raras */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Doenças Raras</label>
                     <input type="text" value={formData.rareDiseases} onChange={(e) => setFormData({...formData, rareDiseases: e.target.value})}
@@ -766,7 +767,6 @@ export const FamilyDetails = () => {
                 </div>
               </div>
 
-              {/* Observações de Saúde */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">📝 Observações de Saúde</label>
                 <textarea value={formData.healthObservations} onChange={(e) => setFormData({...formData, healthObservations: e.target.value})}
@@ -775,7 +775,6 @@ export const FamilyDetails = () => {
                 <p className="text-xs text-slate-500 mt-1">Use este campo para registrar qualquer informação adicional sobre a saúde do paciente</p>
               </div>
 
-              {/* Botões */}
               <div className="flex space-x-4 pt-4 border-t border-slate-200">
                 <button type="button" onClick={() => { setIsFormOpen(false); setEditingPerson(null); resetForm(); }}
                   className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors" disabled={isSaving}>
@@ -790,15 +789,6 @@ export const FamilyDetails = () => {
                     </>
                   ) : (
                     <>
-                    <button
-  onClick={() => exportFamilyPDF(family, people, user?.name || 'Agente')}
-  disabled={isPeopleLoading}
-  className="bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 flex items-center space-x-2 shadow-lg disabled:opacity-50"
->
-  <FileDown size={18} />
-  <span>Exportar PDF</span>
-</button>
-
                       <Save size={20} />
                       <span>{editingPerson ? 'Atualizar' : 'Cadastrar'} Pessoa</span>
                     </>
