@@ -18,6 +18,7 @@ const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.d
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.default })));
 const Subscription = lazy(() => import('./pages/Subscription').then(m => ({ default: m.default })));
 const Meeting = lazy(() => import('./pages/Meeting').then(m => ({ default: m.Meeting })));
+const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -45,6 +46,7 @@ const AppRoutes = () => {
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
         <Route path="/meeting" element={<ProtectedRoute><Meeting /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         
         <Route path="/admin" element={
           <ProtectedRoute requiredRole={UserRole.ADMIN}>

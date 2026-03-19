@@ -23,7 +23,8 @@ import {
   CheckCheck,
   CreditCard,
   Crown,
-  MessageSquare
+  MessageSquare,
+  UserCircle
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -328,7 +329,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
         
-        {/* Logo Mobile Header */}
         <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
               <Activity size={18} className="text-white" strokeWidth={2.5} />
@@ -347,7 +347,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         fixed md:static inset-y-0 left-0 w-[280px] bg-white shadow-2xl md:shadow-none transform transition-transform duration-300 ease-out z-40 flex flex-col
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        {/* Logo Sidebar Desktop */}
         <div className="p-6 border-b border-slate-100 hidden md:flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
@@ -360,7 +359,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         </div>
 
-        {/* Logo Sidebar Mobile */}
         <div className="md:hidden p-4 border-b border-slate-100 flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
@@ -384,6 +382,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <NavItem to="/families" icon={Users} label="Famílias & Pacientes" />
           <NavItem to="/meeting" icon={MessageSquare} label="Reunião" />
           <NavItem to="/notifications" icon={Bell} label="Notificações" />
+          <NavItem to="/profile" icon={UserCircle} label="Meu Perfil" />
           <NavItem to="/subscription" icon={CreditCard} label="Assinatura" />
           
           {user?.role === UserRole.ADMIN && (
@@ -427,15 +426,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <NotificationBellComponent />
           </div>
 
-          <div className="flex items-center space-x-3 mb-4 px-2">
+          <button
+            onClick={() => { navigate('/profile'); setIsSidebarOpen(false); }}
+            className="flex items-center space-x-3 mb-4 px-2 w-full hover:bg-white rounded-xl p-2 transition-colors cursor-pointer"
+          >
             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
               {user?.name.charAt(0).toUpperCase()}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 text-left">
               <p className="text-sm font-bold text-slate-900 truncate">{user?.name}</p>
               <p className="text-xs text-slate-500 truncate">{user?.role === UserRole.ADMIN ? 'Administrador' : 'Agente de Saúde'}</p>
             </div>
-          </div>
+          </button>
           <button 
             onClick={logout}
             className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors shadow-sm font-medium"
