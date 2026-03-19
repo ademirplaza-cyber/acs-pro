@@ -21,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const priceId = plan === 'yearly' ? PRICE_YEARLY : PRICE_MONTHLY;
-  const origin = req.headers.origin || req.headers.referer || 'https://acs-pro.vercel.app';
+  const origin = req.headers.origin || req.headers.referer || 'https://acstop.com.br';
   const baseUrl = origin.replace(/\/$/, '');
 
   try {
