@@ -23,6 +23,10 @@ import {
   ClipboardList,
   FileText,
   X,
+  MapPin,
+  Building2,
+  CreditCard,
+  Search,
 } from 'lucide-react';
 
 type ScreenMode = 'LOGIN' | 'REGISTER' | 'FORGOT_EMAIL' | 'FORGOT_CODE' | 'FORGOT_NEWPASS';
@@ -33,13 +37,16 @@ type ScreenMode = 'LOGIN' | 'REGISTER' | 'FORGOT_EMAIL' | 'FORGOT_CODE' | 'FORGO
 
 const InputField = ({
   label, type = 'text', value, onChange, placeholder, icon: Icon, disabled = false,
-  rightElement,
+  rightElement, required = false, maxLength,
 }: {
   label: string; type?: string; value: string; onChange: (v: string) => void;
   placeholder: string; icon?: any; disabled?: boolean; rightElement?: React.ReactNode;
+  required?: boolean; maxLength?: number;
 }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-600 mb-1.5">{label}</label>
+    <label className="block text-sm font-medium text-gray-600 mb-1.5">
+      {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
     <div className="relative">
       {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />}
       <input
@@ -48,7 +55,8 @@ const InputField = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className={`w-full ${Icon ? 'pl-11' : 'pl-4'} ${rightElement ? 'pr-12' : 'pr-4'} py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white outline-none transition-all text-gray-800 placeholder-gray-400`}
+        maxLength={maxLength}
+        className={`w-full ${Icon ? 'pl-11' : 'pl-4'} ${rightElement ? 'pr-12' : 'pr-4'} py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white outline-none transition-all text-gray-800 placeholder-gray-400 disabled:opacity-60`}
       />
       {rightElement && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -83,6 +91,40 @@ const SubmitButton = ({
       </span>
     </button>
   );
+};
+
+// ============================================
+// HELPERS
+// ============================================
+
+const formatCPF = (value: string): string => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
+
+const formatCEP = (value: string): string => {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+};
+
+const isValidCPF = (cpf: string): boolean => {
+  const digits = cpf.replace(/\D/g, '');
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
+  let rest = (sum * 10) % 11;
+  if (rest === 10) rest = 0;
+  if (rest !== parseInt(digits[9])) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
+  rest = (sum * 10) % 11;
+  if (rest === 10) rest = 0;
+  return rest === parseInt(digits[10]);
 };
 
 // ============================================
@@ -165,7 +207,6 @@ const TermsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
     </div>
   );
 };
-
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -183,6 +224,17 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Novos campos de cadastro
+  const [cpf, setCpf] = useState('');
+  const [cep, setCep] = useState('');
+  const [address, setAddress] = useState('');
+  const [addressNumber, setAddressNumber] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [cityState, setCityState] = useState('');
+  const [healthUnit, setHealthUnit] = useState('');
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [cepMessage, setCepMessage] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null);
 
   // Termos e Condições
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -205,6 +257,37 @@ export const Login: React.FC = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // ============================================
+  // BUSCAR CEP via ViaCEP
+  // ============================================
+  const handleCepChange = async (value: string) => {
+    const formatted = formatCEP(value);
+    setCep(formatted);
+    setCepMessage(null);
+
+    const digits = value.replace(/\D/g, '');
+    if (digits.length === 8) {
+      setIsFetchingCep(true);
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+        const data = await response.json();
+
+        if (data.erro) {
+          setCepMessage({ type: 'info', text: 'CEP não encontrado. Preencha o endereço manualmente.' });
+        } else {
+          setAddress(data.logradouro || '');
+          setNeighborhood(data.bairro || '');
+          setCityState(`${data.localidade || ''}${data.uf ? ' / ' + data.uf : ''}`);
+          setCepMessage({ type: 'success', text: 'Endereço encontrado! Confira e complete o número.' });
+        }
+      } catch (err) {
+        setCepMessage({ type: 'info', text: 'Não foi possível buscar o CEP. Preencha manualmente.' });
+      } finally {
+        setIsFetchingCep(false);
+      }
+    }
+  };
 
   // ============================================
   // HANDLERS
@@ -234,14 +317,29 @@ export const Login: React.FC = () => {
     }
   };
 
+  const buildFullAddress = (): string => {
+    const parts: string[] = [];
+    if (address.trim()) parts.push(address.trim());
+    if (addressNumber.trim()) parts.push(`nº ${addressNumber.trim()}`);
+    if (neighborhood.trim()) parts.push(neighborhood.trim());
+    return parts.join(', ');
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     setIsLoading(true);
     try {
-      if (!name.trim() || !email.trim() || !password.trim()) {
-        setError('Preencha todos os campos.');
+      const fullAddress = buildFullAddress();
+
+      if (!name.trim() || !email.trim() || !password.trim() || !cpf.trim() || !fullAddress.trim() || !cityState.trim() || !healthUnit.trim()) {
+        setError('Preencha todos os campos obrigatórios.');
+        setIsLoading(false);
+        return;
+      }
+      if (!isValidCPF(cpf)) {
+        setError('CPF inválido. Verifique o número digitado.');
         setIsLoading(false);
         return;
       }
@@ -260,14 +358,27 @@ export const Login: React.FC = () => {
         setIsLoading(false);
         return;
       }
-      const result = await register(name.trim(), email.trim(), password);
+      const result = await register(name.trim(), email.trim(), password, {
+        cpf: cpf.replace(/\D/g, ''),
+        address: fullAddress,
+        cityState: cityState.trim(),
+        healthUnit: healthUnit.trim(),
+      });
       if (result) {
         setSuccess('Conta criada com sucesso! Aguarde a aprovação do administrador.');
         setScreenMode('LOGIN');
         setName('');
         setEmail('');
         setPassword('');
+        setCpf('');
+        setCep('');
+        setAddress('');
+        setAddressNumber('');
+        setNeighborhood('');
+        setCityState('');
+        setHealthUnit('');
         setAcceptedTerms(false);
+        setCepMessage(null);
       } else {
         setError('Este email já está cadastrado. Tente fazer login ou use outro email.');
       }
@@ -278,7 +389,7 @@ export const Login: React.FC = () => {
     }
   };
 
-    const handleRequestCode = async (e: React.FormEvent) => {
+  const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -297,11 +408,9 @@ export const Login: React.FC = () => {
       const result = await api.requestPasswordReset(resetEmail.trim());
       if (result.success) {
         if (result.code) {
-          // Fallback: email não pôde ser enviado, exibir código na tela
           setGeneratedCode(result.code);
           setSuccess('Não foi possível enviar o email. Use o código abaixo:');
         } else {
-          // Email enviado com sucesso
           setGeneratedCode('');
           setSuccess('Código de recuperação enviado para seu email! Verifique sua caixa de entrada e spam.');
         }
@@ -413,7 +522,7 @@ export const Login: React.FC = () => {
 
   const features = [
     { icon: Users, title: 'Gestão de Famílias', desc: 'Cadastre e acompanhe todas as famílias da sua microárea' },
-    { icon: ClipboardList, title: 'Visitas Domiciliares', desc: 'Agende, registre e acompanhe todas as visitas com GPS' },
+    { icon: ClipboardList, title: 'Visitas Domiciliares', desc: 'Agende, registre e acompanhe todas as visitas' },
     { icon: Heart, title: 'Monitoramento de Saúde', desc: 'Acompanhe gestantes, hipertensos, diabéticos e grupos de risco' },
     { icon: Cloud, title: 'Dados na Nuvem', desc: 'Seus dados seguros e acessíveis de qualquer dispositivo' },
   ];
@@ -650,7 +759,20 @@ export const Login: React.FC = () => {
                       placeholder="Seu nome completo"
                       icon={Users}
                       disabled={isLoading}
+                      required
                     />
+
+                    <InputField
+                      label="CPF"
+                      value={cpf}
+                      onChange={(v) => setCpf(formatCPF(v))}
+                      placeholder="000.000.000-00"
+                      icon={CreditCard}
+                      disabled={isLoading}
+                      required
+                      maxLength={14}
+                    />
+
                     <InputField
                       label="Email"
                       type="email"
@@ -659,7 +781,9 @@ export const Login: React.FC = () => {
                       placeholder="seu@email.com"
                       icon={Mail}
                       disabled={isLoading}
+                      required
                     />
+
                     <InputField
                       label="Senha"
                       type={showPassword ? 'text' : 'password'}
@@ -668,6 +792,7 @@ export const Login: React.FC = () => {
                       placeholder="Mínimo 6 caracteres"
                       icon={Lock}
                       disabled={isLoading}
+                      required
                       rightElement={
                         <button
                           type="button"
@@ -677,6 +802,109 @@ export const Login: React.FC = () => {
                           {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       }
+                    />
+
+                    {/* ============================================ */}
+                    {/* SEÇÃO DE ENDEREÇO COM CEP */}
+                    {/* ============================================ */}
+                    <div className="pt-2 pb-1">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5" />
+                        Endereço
+                      </p>
+                    </div>
+
+                    {/* CEP */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                        CEP<span className="text-red-500 ml-0.5">*</span>
+                      </label>
+                      <div className="relative">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type="text"
+                          value={cep}
+                          onChange={(e) => handleCepChange(e.target.value)}
+                          placeholder="00000-000"
+                          maxLength={9}
+                          disabled={isLoading}
+                          className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white outline-none transition-all text-gray-800 placeholder-gray-400 disabled:opacity-60"
+                        />
+                        {isFetchingCep && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                      {cepMessage && (
+                        <p className={`text-xs mt-1.5 flex items-center gap-1 ${
+                          cepMessage.type === 'success' ? 'text-green-600' :
+                          cepMessage.type === 'error' ? 'text-red-500' : 'text-amber-600'
+                        }`}>
+                          {cepMessage.type === 'success' ? <CheckCircle2 className="w-3 h-3" /> :
+                           cepMessage.type === 'error' ? <AlertCircle className="w-3 h-3" /> :
+                           <AlertCircle className="w-3 h-3" />}
+                          {cepMessage.text}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Rua + Número */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="col-span-2">
+                        <InputField
+                          label="Rua / Logradouro"
+                          value={address}
+                          onChange={setAddress}
+                          placeholder="Nome da rua"
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <InputField
+                          label="Número"
+                          value={addressNumber}
+                          onChange={setAddressNumber}
+                          placeholder="Nº"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Bairro */}
+                    <InputField
+                      label="Bairro"
+                      value={neighborhood}
+                      onChange={setNeighborhood}
+                      placeholder="Nome do bairro"
+                      disabled={isLoading}
+                      required
+                    />
+
+                    {/* Cidade / UF */}
+                    <InputField
+                      label="Cidade / UF"
+                      value={cityState}
+                      onChange={setCityState}
+                      placeholder="Ex: São Paulo / SP"
+                      icon={Building2}
+                      disabled={isLoading}
+                      required
+                    />
+
+                    {/* ============================================ */}
+                    {/* FIM DA SEÇÃO DE ENDEREÇO */}
+                    {/* ============================================ */}
+
+                    <InputField
+                      label="Unidade de Saúde"
+                      value={healthUnit}
+                      onChange={setHealthUnit}
+                      placeholder="Nome da UBS / ESF"
+                      icon={Activity}
+                      disabled={isLoading}
+                      required
                     />
 
                     {/* CHECKBOX DE TERMOS E CONDIÇÕES */}
@@ -714,7 +942,7 @@ export const Login: React.FC = () => {
                     <p className="text-xs text-blue-800 font-semibold mb-2">Como funciona o registro:</p>
                     <div className="space-y-1.5">
                       {[
-                        'Crie sua conta com nome, email e senha',
+                        'Preencha seus dados pessoais e profissionais',
                         'Aceite os Termos e Condições de Uso',
                         'Sua conta ficará com status "Pendente"',
                         'O administrador irá aprovar seu acesso',
@@ -778,7 +1006,7 @@ export const Login: React.FC = () => {
                 </>
               )}
 
-                            {/* TELA: ESQUECI SENHA — STEP 2: CÓDIGO */}
+              {/* TELA: ESQUECI SENHA — STEP 2: CÓDIGO */}
               {screenMode === 'FORGOT_CODE' && (
                 <>
                   <div className="text-center mb-6">
@@ -794,7 +1022,6 @@ export const Login: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Só mostra o código na tela se for fallback (email não enviou) */}
                   {generatedCode && (
                     <div className="mb-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl text-center">
                       <p className="text-[10px] text-amber-600 mb-1 font-semibold uppercase tracking-wider">Código de recuperação (fallback)</p>
@@ -803,7 +1030,6 @@ export const Login: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Mensagem de email enviado */}
                   {!generatedCode && (
                     <div className="mb-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl text-center">
                       <Mail className="w-8 h-8 text-blue-500 mx-auto mb-2" />

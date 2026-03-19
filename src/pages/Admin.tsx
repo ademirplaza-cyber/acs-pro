@@ -6,7 +6,7 @@ import {
   Users, UserCheck, UserPlus, Clock, Ban, CheckCircle2, XCircle,
   Shield, Edit2, Trash2, RefreshCw, Search, Filter, AlertCircle,
   Calendar, Activity, Home, Eye, EyeOff, Save, X,
-  Award, BarChart3
+  Award, BarChart3, MapPin, Building2, CreditCard
 } from 'lucide-react';
 
 // ============================================
@@ -36,6 +36,14 @@ const StatCard: React.FC<{
   </div>
 );
 
+// Formatar CPF para exibição
+const displayCPF = (cpf?: string): string => {
+  if (!cpf) return '—';
+  const digits = cpf.replace(/\D/g, '');
+  if (digits.length !== 11) return cpf;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
+
 export const Admin: React.FC = () => {
   const { refreshUser } = useAuth();
 
@@ -52,6 +60,7 @@ export const Admin: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
   // Estatísticas do sistema
   const [totalFamilies, setTotalFamilies] = useState(0);
@@ -69,6 +78,10 @@ export const Admin: React.FC = () => {
     cns: '',
     microarea: '',
     equipe: '',
+    cpf: '',
+    address: '',
+    cityState: '',
+    healthUnit: '',
     subscriptionDays: 30,
   });
 
@@ -161,7 +174,9 @@ export const Admin: React.FC = () => {
     return users.filter(u => {
       const matchesSearch =
         u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchTerm.toLowerCase());
+        u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (u.cpf && u.cpf.includes(searchTerm.replace(/\D/g, ''))) ||
+        (u.healthUnit && u.healthUnit.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesStatus = statusFilter === 'ALL' || u.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -243,6 +258,10 @@ export const Admin: React.FC = () => {
       cns: '',
       microarea: '',
       equipe: '',
+      cpf: '',
+      address: '',
+      cityState: '',
+      healthUnit: '',
       subscriptionDays: 30,
     });
     setIsFormOpen(true);
@@ -260,6 +279,10 @@ export const Admin: React.FC = () => {
       cns: userToEdit.cns || '',
       microarea: userToEdit.microarea || '',
       equipe: userToEdit.equipe || '',
+      cpf: userToEdit.cpf || '',
+      address: userToEdit.address || '',
+      cityState: userToEdit.cityState || '',
+      healthUnit: userToEdit.healthUnit || '',
       subscriptionDays: 30,
     });
     setIsFormOpen(true);
@@ -289,6 +312,10 @@ export const Admin: React.FC = () => {
         cns: formData.cns || '',
         microarea: formData.microarea || '',
         equipe: formData.equipe || '',
+        cpf: formData.cpf.replace(/\D/g, '') || '',
+        address: formData.address.trim() || '',
+        cityState: formData.cityState.trim() || '',
+        healthUnit: formData.healthUnit.trim() || '',
       };
 
       await api.saveUser(userData);
@@ -375,9 +402,7 @@ export const Admin: React.FC = () => {
         </div>
       </div>
     );
-  }
-
-  // ============================================
+  }  // ============================================
   // RENDER
   // ============================================
   return (
@@ -470,7 +495,7 @@ export const Admin: React.FC = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar por nome ou email..."
+                placeholder="Buscar por nome, email, CPF ou unidade..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -506,7 +531,12 @@ export const Admin: React.FC = () => {
                       <div>
                         <p className="font-medium text-gray-800">{u.name}</p>
                         <p className="text-sm text-gray-500">{u.email}</p>
-                        <p className="text-xs text-gray-400">
+                        <div className="flex flex-wrap gap-2 mt-1 text-xs text-gray-400">
+                          {u.cpf && <span>📋 CPF: {displayCPF(u.cpf)}</span>}
+                          {u.healthUnit && <span>🏥 {u.healthUnit}</span>}
+                          {u.cityState && <span>📍 {u.cityState}</span>}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
                           Registrado em: {u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
                         </p>
                       </div>
@@ -543,9 +573,10 @@ export const Admin: React.FC = () => {
             <div className="space-y-3">
               {filteredUsers.map(u => {
                 const subInfo = getSubscriptionInfo(u);
+                const isExpanded = expandedUserId === u.id;
                 return (
                   <div key={u.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-gray-800">{u.name}</h3>
@@ -554,12 +585,72 @@ export const Admin: React.FC = () => {
                         </div>
                         <p className="text-sm text-gray-500 mt-1">{u.email}</p>
                         <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-400">
+                          {u.healthUnit && <span>🏥 {u.healthUnit}</span>}
                           {u.phone && <span>📱 {u.phone}</span>}
                           {u.microarea && <span>📍 Microárea: {u.microarea}</span>}
                           {u.equipe && <span>👥 Equipe: {u.equipe}</span>}
                           {u.cns && <span>🏥 CNS: {u.cns}</span>}
                           <span className={subInfo.color}>📅 {subInfo.text}</span>
                         </div>
+
+                        {/* Botão expandir dados pessoais */}
+                        <button
+                          onClick={() => setExpandedUserId(isExpanded ? null : u.id)}
+                          className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline flex items-center gap-1"
+                        >
+                          {isExpanded ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          {isExpanded ? 'Ocultar dados pessoais' : 'Ver dados pessoais'}
+                        </button>
+
+                        {/* Dados pessoais expandidos (só admin vê) */}
+                        {isExpanded && (
+                          <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-1.5">
+                            <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1">
+                              <Shield className="w-3 h-3 text-purple-500" />
+                              Dados pessoais (visível apenas para admin)
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <span className="text-gray-400">CPF:</span>{' '}
+                                <span className="text-gray-700 font-medium">{displayCPF(u.cpf)}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Telefone:</span>{' '}
+                                <span className="text-gray-700 font-medium">{u.phone || '—'}</span>
+                              </div>
+                              <div className="sm:col-span-2">
+                                <span className="text-gray-400">Endereço:</span>{' '}
+                                <span className="text-gray-700 font-medium">{u.address || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Cidade/UF:</span>{' '}
+                                <span className="text-gray-700 font-medium">{u.cityState || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Unidade de Saúde:</span>{' '}
+                                <span className="text-gray-700 font-medium">{u.healthUnit || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">CNS:</span>{' '}
+                                <span className="text-gray-700 font-medium">{u.cns || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Microárea:</span>{' '}
+                                <span className="text-gray-700 font-medium">{u.microarea || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Equipe:</span>{' '}
+                                <span className="text-gray-700 font-medium">{u.equipe || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Cadastro:</span>{' '}
+                                <span className="text-gray-700 font-medium">
+                                  {u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : '—'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Ações */}
@@ -699,6 +790,8 @@ export const Admin: React.FC = () => {
                       <div>
                         <h3 className="font-medium text-gray-800">{u.name}</h3>
                         <p className="text-sm text-gray-500">{u.email}</p>
+                        {u.healthUnit && <p className="text-xs text-gray-400 mt-0.5">🏥 {u.healthUnit}</p>}
+                        {u.cityState && <p className="text-xs text-gray-400">📍 {u.cityState}</p>}
                         <p className={`text-sm font-medium mt-1 ${subInfo.color}`}>
                           📅 {subInfo.text}
                         </p>
@@ -769,6 +862,29 @@ export const Admin: React.FC = () => {
                   />
                 </div>
 
+                {/* CPF */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+                  <div className="relative">
+                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={formData.cpf}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+                        let formatted = digits;
+                        if (digits.length > 3) formatted = `${digits.slice(0, 3)}.${digits.slice(3)}`;
+                        if (digits.length > 6) formatted = `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+                        if (digits.length > 9) formatted = `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+                        setFormData({ ...formData, cpf: formatted });
+                      }}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      placeholder="000.000.000-00"
+                      maxLength={14}
+                    />
+                  </div>
+                </div>
+
                 {/* Email */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
@@ -827,6 +943,51 @@ export const Admin: React.FC = () => {
                       <option value="PENDING">Pendente</option>
                       <option value="BLOCKED">Bloqueado</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Endereço */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      placeholder="Rua, número, bairro"
+                    />
+                  </div>
+                </div>
+
+                {/* Cidade/UF e Unidade de Saúde */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cidade / UF</label>
+                    <div className="relative">
+                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.cityState}
+                        onChange={(e) => setFormData({ ...formData, cityState: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        placeholder="São Paulo / SP"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Unidade de Saúde</label>
+                    <div className="relative">
+                      <Activity className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.healthUnit}
+                        onChange={(e) => setFormData({ ...formData, healthUnit: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        placeholder="Nome da UBS / ESF"
+                      />
+                    </div>
                   </div>
                 </div>
 

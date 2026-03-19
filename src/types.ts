@@ -44,6 +44,10 @@ export interface User {
   equipe?: string;
   cns?: string;
   phone?: string;
+  cpf?: string;
+  address?: string;
+  cityState?: string;
+  healthUnit?: string;
 }
 
 // ============================================
@@ -93,10 +97,8 @@ export interface Person {
   phone?: string;
   isPuerperium: boolean;
   
-  // Parentesco com responsável
   relationshipToHead?: string;
 
-  // Condições de saúde
   hasHypertension: boolean;
   hasDiabetes: boolean;
   isPregnant: boolean;
@@ -121,7 +123,6 @@ export interface Person {
   rareDiseases?: string;
   otherConditions?: string;
 
-  // Observações de saúde
   healthObservations?: string;
   
   createdAt: string;
@@ -162,7 +163,7 @@ export interface Visit {
 }
 
 // ============================================
-// MEETING TOPIC - Assuntos para Reunião
+// MEETING TOPIC
 // ============================================
 
 export interface MeetingTopic {

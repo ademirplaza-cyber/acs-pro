@@ -7,12 +7,19 @@ import { api } from '../services/api';
 // Login e registro agora usam Supabase (nuvem)
 // ============================================
 
+interface RegisterExtraData {
+  cpf?: string;
+  address?: string;
+  cityState?: string;
+  healthUnit?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string, extraData?: RegisterExtraData) => Promise<boolean>;
   logout: () => void;
   refreshUser: () => void;
 }
@@ -116,7 +123,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // ============================================
   // REGISTRO — cria usuário no Supabase
   // ============================================
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+    extraData?: RegisterExtraData
+  ): Promise<boolean> => {
     try {
       console.log('📝 Registrando novo usuário:', email);
 
@@ -127,7 +139,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return false;
       }
 
-      // Criar novo usuário
+      // Criar novo usuário com dados completos
       const newUser: User = {
         id: '',
         name: name.trim(),
@@ -135,9 +147,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         password: password,
         role: UserRole.AGENT,
         status: UserStatus.PENDING,
-        subscriptionExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         acceptedTermsAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
+        cpf: extraData?.cpf || '',
+        address: extraData?.address || '',
+        cityState: extraData?.cityState || '',
+        healthUnit: extraData?.healthUnit || '',
       };
 
       // Salvar no Supabase (o banco gera o ID automaticamente)
@@ -152,7 +168,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-    // ============================================
+  // ============================================
   // LOGOUT
   // ============================================
   const logout = () => {
@@ -161,7 +177,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('acs_current_user');
     window.location.hash = '#/home';
   };
-
 
   // ============================================
   // REFRESH — atualizar dados do usuário

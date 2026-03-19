@@ -33,6 +33,10 @@ export const api = {
       cns: row.cns || '',
       phone: row.phone || '',
       acceptedTermsAt: row.accepted_terms_at || '',
+      cpf: row.cpf || '',
+      address: row.address || '',
+      cityState: row.city_state || '',
+      healthUnit: row.health_unit || '',
     }));
 
     console.log('✅ Usuários carregados:', users.length);
@@ -71,6 +75,10 @@ export const api = {
       cns: data.cns || '',
       phone: data.phone || '',
       acceptedTermsAt: data.accepted_terms_at || '',
+      cpf: data.cpf || '',
+      address: data.address || '',
+      cityState: data.city_state || '',
+      healthUnit: data.health_unit || '',
     };
 
     console.log('✅ Usuário encontrado:', user.name);
@@ -106,6 +114,10 @@ export const api = {
       cns: data.cns || '',
       phone: data.phone || '',
       acceptedTermsAt: data.accepted_terms_at || '',
+      cpf: data.cpf || '',
+      address: data.address || '',
+      cityState: data.city_state || '',
+      healthUnit: data.health_unit || '',
     };
 
     return user;
@@ -125,6 +137,10 @@ export const api = {
       cns: user.cns || null,
       phone: user.phone || null,
       accepted_terms_at: user.acceptedTermsAt || null,
+      cpf: user.cpf || null,
+      address: user.address || null,
+      city_state: user.cityState || null,
+      health_unit: user.healthUnit || null,
       updated_at: new Date().toISOString(),
     };
 
@@ -209,7 +225,7 @@ export const api = {
   // RECUPERAÇÃO DE SENHA
   // ============================================
 
-    async requestPasswordReset(email: string): Promise<{ success: boolean; code?: string; error?: string }> {
+  async requestPasswordReset(email: string): Promise<{ success: boolean; code?: string; error?: string }> {
     console.log('🔐 Solicitando recuperação de senha para:', email);
     const user = await api.getUserByEmail(email);
     if (!user) {
@@ -259,21 +275,19 @@ export const api = {
 
       if (!emailResponse.ok) {
         console.error('❌ Erro ao enviar email:', emailResult);
-        // Fallback: retorna o código para exibir na tela
         return { success: true, code: code };
       }
 
       console.log('✅ Email enviado com sucesso!');
-      // Não retorna o código — foi enviado por email
       return { success: true };
 
     } catch (emailError) {
       console.error('❌ Erro de rede ao enviar email:', emailError);
-      // Fallback: retorna o código para exibir na tela
       return { success: true, code: code };
     }
   },
-    async verifyResetCode(email: string, code: string): Promise<{ success: boolean; userId?: string; error?: string }> {
+
+  async verifyResetCode(email: string, code: string): Promise<{ success: boolean; userId?: string; error?: string }> {
     console.log('🔐 Verificando código de recuperação:', email, code);
     const { data, error } = await supabase
       .from('password_reset_codes')
@@ -320,9 +334,7 @@ export const api = {
 
     console.log('✅ Senha redefinida com sucesso!');
     return { success: true };
-  },
-
-  // ============================================
+  },  // ============================================
   // FAMÍLIAS
   // ============================================
 
@@ -704,6 +716,7 @@ export const api = {
     if (error) { console.error('❌ Erro ao contar visitas:', error); return 0; }
     return count || 0;
   },
+
   // ============================================
   // NOTIFICAÇÕES
   // ============================================
