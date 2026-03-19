@@ -277,32 +277,36 @@ export const FamilyDetails = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center space-x-4 mb-6">
-        <button onClick={() => navigate('/families')} className="p-3 hover:bg-slate-200 rounded-full transition-colors">
-          <ArrowLeft size={24} className="text-slate-600" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-slate-800">Família {family.familyNumber}</h1>
-          <p className="text-slate-600">
-            {family.address.street}, {family.address.number} - {family.address.neighborhood}
-            <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">☁️ Dados na nuvem</span>
-          </p>
+      <div>
+        <div className="flex items-center space-x-4 mb-4">
+          <button onClick={() => navigate('/families')} className="p-3 hover:bg-slate-200 rounded-full transition-colors flex-shrink-0">
+            <ArrowLeft size={24} className="text-slate-600" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-800 truncate">Família {family.familyNumber}</h1>
+            <p className="text-slate-600 text-sm md:text-base truncate">
+              {family.address.street}, {family.address.number} - {family.address.neighborhood}
+              <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">☁️ Nuvem</span>
+            </p>
+          </div>
         </div>
-        <button
-          onClick={() => exportFamilyPDF(family, people, user?.name || 'Agente')}
-          disabled={isPeopleLoading}
-          className="bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 flex items-center space-x-2 shadow-lg disabled:opacity-50"
-        >
-          <FileDown size={18} />
-          <span>Exportar PDF</span>
-        </button>
-        <button onClick={loadPeople} className="bg-white px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 flex items-center space-x-2">
-          <RefreshCw size={18} /><span>Atualizar</span>
-        </button>
-        <button onClick={() => { resetForm(); setFormData(prev => ({...prev, isHeadOfFamily: people.length === 0})); setIsFormOpen(true); }}
-          className="bg-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-purple-700 flex items-center space-x-2 shadow-lg hover:shadow-xl transition-all">
-          <Plus size={20} /><span>Nova Pessoa</span>
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => exportFamilyPDF(family, people, user?.name || 'Agente')}
+            disabled={isPeopleLoading}
+            className="bg-green-600 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-green-700 flex items-center space-x-2 shadow-lg disabled:opacity-50"
+          >
+            <FileDown size={18} />
+            <span>Exportar PDF</span>
+          </button>
+          <button onClick={loadPeople} className="bg-white px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 flex items-center space-x-2">
+            <RefreshCw size={18} /><span>Atualizar</span>
+          </button>
+          <button onClick={() => { resetForm(); setFormData(prev => ({...prev, isHeadOfFamily: people.length === 0})); setIsFormOpen(true); }}
+            className="bg-purple-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-purple-700 flex items-center space-x-2 shadow-lg hover:shadow-xl transition-all">
+            <Plus size={20} /><span>Nova Pessoa</span>
+          </button>
+        </div>
       </div>
 
       {/* Estatísticas */}
@@ -368,6 +372,7 @@ export const FamilyDetails = () => {
           <p className="text-[10px] text-slate-600 font-medium">Alcoólatras</p>
         </div>
       </div>
+
       {/* Lista de Membros */}
       {isPeopleLoading ? (
         <div className="flex justify-center items-center h-32">

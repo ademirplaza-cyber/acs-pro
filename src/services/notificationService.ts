@@ -154,12 +154,17 @@ async function checkUpcomingVisits(agentId: string): Promise<void> {
 }
 
 // 3. Famílias sem visita há mais de 30 dias
+// CORREÇÃO: Só alerta se a família foi cadastrada há mais de 30 dias
 async function checkFamiliesWithoutVisit(agentId: string): Promise<void> {
   try {
     const families = await api.getFamilies(agentId);
     const visits = await api.getVisits(agentId);
 
     for (const family of families) {
+      // Ignorar famílias cadastradas há menos de 30 dias
+      const daysSinceCreation = daysBetween(new Date(family.registeredAt), new Date());
+      if (daysSinceCreation < 30) continue;
+
       const familyVisits = visits.filter(
         (v) => v.familyId === family.id && v.status === VisitStatus.COMPLETED
       );
@@ -185,7 +190,7 @@ async function checkFamiliesWithoutVisit(agentId: string): Promise<void> {
           agentId,
           relatedEntityId: family.id,
           relatedEntityType: 'family',
-          actionUrl: '/families',
+          actionUrl: `/families/${family.id}`,
         });
       }
     }
@@ -195,6 +200,7 @@ async function checkFamiliesWithoutVisit(agentId: string): Promise<void> {
 }
 
 // 4. Gestantes sem acompanhamento (15+ dias)
+// CORREÇÃO: Só alerta se a pessoa foi cadastrada há mais de 15 dias
 async function checkPregnantWithoutCare(agentId: string): Promise<void> {
   try {
     const families = await api.getFamilies(agentId);
@@ -205,6 +211,10 @@ async function checkPregnantWithoutCare(agentId: string): Promise<void> {
       const pregnant = people.filter((p) => p.isPregnant);
 
       for (const person of pregnant) {
+        // Ignorar pessoas cadastradas há menos de 15 dias
+        const daysSinceCreation = daysBetween(new Date(person.createdAt), new Date());
+        if (daysSinceCreation < 15) continue;
+
         const familyVisits = visits.filter(
           (v) => v.familyId === person.familyId && v.status === VisitStatus.COMPLETED
         );
@@ -225,9 +235,9 @@ async function checkPregnantWithoutCare(agentId: string): Promise<void> {
             title: '🤰 Gestante sem Acompanhamento',
             message: `${person.name} (Família ${family.familyNumber}) está há ${daysSince === 999 ? 'muito tempo' : daysSince + ' dias'} sem visita. Gestantes precisam de acompanhamento quinzenal.`,
             agentId,
-            relatedEntityId: person.id,
-            relatedEntityType: 'person',
-            actionUrl: '/families',
+            relatedEntityId: family.id,
+            relatedEntityType: 'family',
+            actionUrl: `/families/${family.id}`,
           });
         }
       }
@@ -238,6 +248,7 @@ async function checkPregnantWithoutCare(agentId: string): Promise<void> {
 }
 
 // 5. Hipertensos sem acompanhamento (30+ dias)
+// CORREÇÃO: Só alerta se a pessoa foi cadastrada há mais de 30 dias
 async function checkHypertensiveWithoutCare(agentId: string): Promise<void> {
   try {
     const families = await api.getFamilies(agentId);
@@ -248,6 +259,10 @@ async function checkHypertensiveWithoutCare(agentId: string): Promise<void> {
       const hypertensive = people.filter((p) => p.hasHypertension);
 
       for (const person of hypertensive) {
+        // Ignorar pessoas cadastradas há menos de 30 dias
+        const daysSinceCreation = daysBetween(new Date(person.createdAt), new Date());
+        if (daysSinceCreation < 30) continue;
+
         const familyVisits = visits.filter(
           (v) => v.familyId === person.familyId && v.status === VisitStatus.COMPLETED
         );
@@ -268,9 +283,9 @@ async function checkHypertensiveWithoutCare(agentId: string): Promise<void> {
             title: '❤️ Hipertenso sem Acompanhamento',
             message: `${person.name} (Família ${family.familyNumber}) é hipertenso(a) e está há ${daysSince === 999 ? 'muito tempo' : daysSince + ' dias'} sem visita.`,
             agentId,
-            relatedEntityId: person.id,
-            relatedEntityType: 'person',
-            actionUrl: '/families',
+            relatedEntityId: family.id,
+            relatedEntityType: 'family',
+            actionUrl: `/families/${family.id}`,
           });
         }
       }
@@ -281,6 +296,7 @@ async function checkHypertensiveWithoutCare(agentId: string): Promise<void> {
 }
 
 // 6. Diabéticos sem acompanhamento (30+ dias)
+// CORREÇÃO: Só alerta se a pessoa foi cadastrada há mais de 30 dias
 async function checkDiabeticWithoutCare(agentId: string): Promise<void> {
   try {
     const families = await api.getFamilies(agentId);
@@ -291,6 +307,10 @@ async function checkDiabeticWithoutCare(agentId: string): Promise<void> {
       const diabetic = people.filter((p) => p.hasDiabetes);
 
       for (const person of diabetic) {
+        // Ignorar pessoas cadastradas há menos de 30 dias
+        const daysSinceCreation = daysBetween(new Date(person.createdAt), new Date());
+        if (daysSinceCreation < 30) continue;
+
         const familyVisits = visits.filter(
           (v) => v.familyId === person.familyId && v.status === VisitStatus.COMPLETED
         );
@@ -311,9 +331,9 @@ async function checkDiabeticWithoutCare(agentId: string): Promise<void> {
             title: '🩸 Diabético sem Acompanhamento',
             message: `${person.name} (Família ${family.familyNumber}) é diabético(a) e está há ${daysSince === 999 ? 'muito tempo' : daysSince + ' dias'} sem visita.`,
             agentId,
-            relatedEntityId: person.id,
-            relatedEntityType: 'person',
-            actionUrl: '/families',
+            relatedEntityId: family.id,
+            relatedEntityType: 'family',
+            actionUrl: `/families/${family.id}`,
           });
         }
       }

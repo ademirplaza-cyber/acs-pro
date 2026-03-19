@@ -117,7 +117,7 @@ const Notifications: React.FC = () => {
   // ============================================
   // CORREÇÃO: navegar para a entidade específica
   // ============================================
-  const handleClickNotification = (notification: NotificationItem) => {
+    const handleClickNotification = (notification: NotificationItem) => {
     if (!notification.is_read) {
       handleMarkAsRead(notification.id);
     }
@@ -125,21 +125,17 @@ const Notifications: React.FC = () => {
     const entityId = notification.related_entity_id;
     const entityType = notification.related_entity_type;
 
-    // Navegar para a entidade específica
+    // Navegar para a família específica
     if (entityId && entityType === 'family') {
       navigate(`/families/${entityId}`);
       return;
     }
-    if (entityId && entityType === 'person') {
-      // Pessoa: navegar para a família dela (o entityId é o person.id,
-      // mas precisamos do familyId — como fallback, vamos para /families)
-      navigate('/families');
-      return;
-    }
+    // Visita: ir para visitas
     if (entityId && entityType === 'visit') {
       navigate('/visits');
       return;
     }
+    // Usuário (admin): ir para admin
     if (entityId && entityType === 'user') {
       navigate('/admin');
       return;
@@ -148,8 +144,13 @@ const Notifications: React.FC = () => {
     // Fallback: usa action_url se existir
     if (notification.action_url) {
       navigate(notification.action_url);
+      return;
     }
+
+    // Último fallback
+    navigate('/dashboard');
   };
+
 
   // Filtros
   const filteredNotifications = useMemo(() => {
