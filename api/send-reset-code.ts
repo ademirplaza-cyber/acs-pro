@@ -85,7 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'ACS Top <onboarding@resend.dev>',
+        from: 'ACS Top <noreply@acstop.com.br>',
         to: [cleanEmail],
         subject: 'Código de Recuperação de Senha - ACS Top',
         html: `
