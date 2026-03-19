@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Family, Person } from '../types';
+import { FileDown } from 'lucide-react';
+import { exportFamilyPDF } from '../utils/exportFamilyPDF';
 import { 
   User, 
   Users, 
@@ -788,6 +790,15 @@ export const FamilyDetails = () => {
                     </>
                   ) : (
                     <>
+                    <button
+  onClick={() => exportFamilyPDF(family, people, user?.name || 'Agente')}
+  disabled={isPeopleLoading}
+  className="bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 flex items-center space-x-2 shadow-lg disabled:opacity-50"
+>
+  <FileDown size={18} />
+  <span>Exportar PDF</span>
+</button>
+
                       <Save size={20} />
                       <span>{editingPerson ? 'Atualizar' : 'Cadastrar'} Pessoa</span>
                     </>
