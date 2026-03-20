@@ -32,9 +32,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     const searchData = await searchRes.json();
 
-    if (searchData.data && searchData.data.length > 0) {
+        if (searchData.data && searchData.data.length > 0) {
       customerId = searchData.data[0].id;
+
+      // Atualizar CPF se o cliente existente não tiver
+      if (cpfCnpj && !searchData.data[0].cpfCnpj) {
+        await fetch(`${ASAAS_API_URL}/customers/${customerId}`, {
+          method: 'PUT',
+          headers: {
+            'access_token': ASAAS_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ cpfCnpj }),
+        });
+      }
     } else {
+
       // Criar novo cliente
       const customerBody: Record<string, string> = {
         name: userName || userEmail.split('@')[0],
