@@ -12,49 +12,105 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Dados obrigatórios: plan, userId, userEmail' });
   }
 
-  const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-  const PRICE_MONTHLY = process.env.STRIPE_PRICE_MONTHLY;
-  const PRICE_YEARLY = process.env.STRIPE_PRICE_YEARLY;
+  const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+  const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://api.asaas.com/v3';
 
-  if (!STRIPE_SECRET_KEY || !PRICE_MONTHLY || !PRICE_YEARLY) {
-    return res.status(500).json({ error: 'Configuração do Stripe ausente' });
+  if (!ASAAS_API_KEY) {
+    return res.status(500).json({ error: 'Configuração do Asaas ausente' });
   }
 
-  const priceId = plan === 'yearly' ? PRICE_YEARLY : PRICE_MONTHLY;
   const origin = req.headers.origin || req.headers.referer || 'https://acstop.com.br';
   const baseUrl = origin.replace(/\/$/, '');
 
   try {
-    const params = new URLSearchParams();
-    params.append('mode', 'subscription');
-    params.append('payment_method_types[0]', 'card');
-    params.append('line_items[0][price]', priceId);
-    params.append('line_items[0][quantity]', '1');
-    params.append('success_url', `${baseUrl}/#/subscription?status=success&session_id={CHECKOUT_SESSION_ID}`);
-    params.append('cancel_url', `${baseUrl}/#/subscription?status=cancelled`);
-    params.append('customer_email', userEmail);
-    params.append('client_reference_id', userId);
-    params.append('metadata[userId]', userId);
-    params.append('metadata[userName]', userName || '');
-    params.append('metadata[plan]', plan);
+    // 1. Criar ou buscar cliente no Asaas
+    let customerId = '';
 
-    const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+    // Buscar cliente existente por email
+    const searchRes = await fetch(`${ASAAS_API_URL}/customers?email=${encodeURIComponent(userEmail)}`, {
+      headers: { 'access_token': ASAAS_API_KEY },
+    });
+    const searchData = await searchRes.json();
+
+    if (searchData.data && searchData.data.length > 0) {
+      customerId = searchData.data[0].id;
+    } else {
+      // Criar novo cliente
+      const createRes = await fetch(`${ASAAS_API_URL}/customers`, {
+        method: 'POST',
+        headers: {
+          'access_token': ASAAS_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: userName || userEmail.split('@')[0],
+          email: userEmail,
+          externalReference: userId,
+        }),
+      });
+      const createData = await createRes.json();
+
+      if (!createRes.ok) {
+        console.error('Erro ao criar cliente Asaas:', createData);
+        return res.status(500).json({ error: 'Erro ao criar cliente', details: createData });
+      }
+      customerId = createData.id;
+    }
+
+    // 2. Criar cobrança
+    const isYearly = plan === 'yearly';
+    const value = isYearly ? 299.90 : 29.90;
+    const description = isYearly
+      ? 'ACS Top - Plano Anual'
+      : 'ACS Top - Plano Mensal';
+
+    // Data de vencimento: hoje + 1 dia
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 1);
+    const dueDateStr = dueDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    const chargeRes = await fetch(`${ASAAS_API_URL}/payments`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'access_token': ASAAS_API_KEY,
+        'Content-Type': 'application/json',
       },
-      body: params.toString(),
+      body: JSON.stringify({
+        customer: customerId,
+        billingType: 'UNDEFINED', // Permite cartão, boleto e PIX
+        value: value,
+        dueDate: dueDateStr,
+        description: description,
+        externalReference: JSON.stringify({ userId, plan }),
+        callback: {
+          successUrl: `${baseUrl}/#/subscription?status=success&payment_id={id}`,
+          autoRedirect: true,
+        },
+      }),
     });
 
-    const session = await response.json();
-    if (!response.ok) {
-      console.error('Erro Stripe:', session);
-      return res.status(500).json({ error: 'Erro ao criar sessão de pagamento', details: session });
+    const chargeData = await chargeRes.json();
+
+    if (!chargeRes.ok) {
+      console.error('Erro ao criar cobrança Asaas:', chargeData);
+      return res.status(500).json({ error: 'Erro ao criar cobrança', details: chargeData });
     }
-    return res.status(200).json({ url: session.url, sessionId: session.id });
+
+    // 3. Retornar URL de pagamento
+    const paymentUrl = chargeData.invoiceUrl;
+
+    if (!paymentUrl) {
+      console.error('Asaas não retornou invoiceUrl:', chargeData);
+      return res.status(500).json({ error: 'URL de pagamento não disponível' });
+    }
+
+    return res.status(200).json({
+      url: paymentUrl,
+      paymentId: chargeData.id,
+    });
+
   } catch (error) {
-    console.error('Erro ao criar checkout:', error);
+    console.error('Erro ao criar checkout Asaas:', error);
     return res.status(500).json({ error: 'Erro interno' });
   }
 }
