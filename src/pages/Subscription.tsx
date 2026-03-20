@@ -25,17 +25,18 @@ export default function Subscription() {
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'verifying' | 'success' | 'error' | 'cancelled'>('idle');
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
+    useEffect(() => {
     const hash = window.location.hash;
     const hashParts = hash.split('?');
     const params = new URLSearchParams(hashParts[1] || '');
 
     const status = params.get('status');
     const sessionId = params.get('session_id');
+    const paymentId = params.get('payment_id');
 
-    if (status === 'success' && sessionId) {
+    if (status === 'success' && (sessionId || paymentId)) {
       setPaymentStatus('verifying');
-      handleVerifyPayment(sessionId);
+      handleVerifyPayment(paymentId || sessionId || '');
     } else if (status === 'cancelled') {
       setPaymentStatus('cancelled');
       setMessage('Pagamento cancelado. Você pode tentar novamente quando quiser.');
@@ -43,12 +44,12 @@ export default function Subscription() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleVerifyPayment = async (sessionId: string) => {
+    const handleVerifyPayment = async (paymentOrSessionId: string) => {
     try {
       const response = await fetch('/api/verify-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ paymentId: paymentOrSessionId, sessionId: paymentOrSessionId }),
       });
       const data = await response.json();
 
@@ -71,6 +72,10 @@ export default function Subscription() {
         setPaymentStatus('success');
         setMessage('Pagamento confirmado! Sua assinatura está ativa.');
         window.location.hash = '#/subscription';
+      } else if (data.success && !data.paid) {
+        // Pagamento pendente (boleto/PIX)
+        setPaymentStatus('idle');
+        setMessage('Pagamento pendente. Assim que for confirmado, sua assinatura será ativada automaticamente.');
       } else {
         setPaymentStatus('error');
         setMessage('Não foi possível confirmar o pagamento. Tente novamente ou entre em contato.');

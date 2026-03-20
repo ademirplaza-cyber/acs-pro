@@ -7,38 +7,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { sessionId } = req.body;
-  if (!sessionId) return res.status(400).json({ error: 'sessionId obrigatório' });
+  const { paymentId, sessionId } = req.body;
+  const id = paymentId || sessionId;
 
-  const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-  if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Configuração do Stripe ausente' });
+  if (!id) {
+    return res.status(400).json({ error: 'paymentId é obrigatório' });
+  }
+
+  const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+  const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://api.asaas.com/v3';
+
+  if (!ASAAS_API_KEY) {
+    return res.status(500).json({ error: 'Configuração do Asaas ausente' });
+  }
 
   try {
-    const response = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
-      headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` },
+    const response = await fetch(`${ASAAS_API_URL}/payments/${id}`, {
+      headers: { 'access_token': ASAAS_API_KEY },
     });
 
-    const session = await response.json();
+    const payment = await response.json();
+
     if (!response.ok) {
-      console.error('Erro Stripe:', session);
+      console.error('Erro ao consultar pagamento Asaas:', payment);
       return res.status(500).json({ error: 'Erro ao verificar pagamento' });
     }
 
-    if (session.payment_status === 'paid') {
-      const plan = session.metadata?.plan || 'monthly';
-      const daysToAdd = plan === 'yearly' ? 365 : 30;
-      return res.status(200).json({
-        success: true,
-        paid: true,
-        userId: session.client_reference_id || session.metadata?.userId,
-        plan,
-        daysToAdd,
-        customerEmail: session.customer_email,
-        subscriptionId: session.subscription,
-      });
+    const isPaid = ['CONFIRMED', 'RECEIVED', 'RECEIVED_IN_CASH'].includes(payment.status);
+
+    let plan = 'monthly';
+    let userId = '';
+
+    try {
+      const ref = JSON.parse(payment.externalReference || '{}');
+      plan = ref.plan || 'monthly';
+      userId = ref.userId || '';
+    } catch {
+      // externalReference não é JSON válido
     }
 
-    return res.status(200).json({ success: true, paid: false, status: session.payment_status });
+    return res.status(200).json({
+      success: true,
+      paid: isPaid,
+      status: payment.status,
+      plan: plan,
+      userId: userId,
+      value: payment.value,
+      billingType: payment.billingType,
+    });
+
   } catch (error) {
     console.error('Erro ao verificar pagamento:', error);
     return res.status(500).json({ error: 'Erro interno' });
