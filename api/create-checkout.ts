@@ -101,10 +101,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         dueDate: dueDateStr,
         description: description,
         externalReference: JSON.stringify({ userId, plan }),
-        callback: {
-          successUrl: `${baseUrl}/#/subscription?status=success&payment_id={id}`,
+                callback: {
+          successUrl: `${baseUrl}/#/subscription?status=success`,
           autoRedirect: true,
         },
+
       }),
     });
 

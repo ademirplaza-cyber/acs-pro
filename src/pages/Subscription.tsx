@@ -43,9 +43,12 @@ export default function Subscription() {
     const sessionId = params.get('session_id');
     const paymentId = params.get('payment_id');
 
-    if (status === 'success' && (sessionId || paymentId)) {
+        if (status === 'success' && (sessionId || paymentId)) {
       setPaymentStatus('verifying');
       handleVerifyPayment(paymentId || sessionId || '');
+    } else if (status === 'success') {
+      setPaymentStatus('success');
+      setMessage('Pagamento realizado! Sua assinatura será ativada em instantes.');
     } else if (status === 'cancelled') {
       setPaymentStatus('cancelled');
       setMessage('Pagamento cancelado. Você pode tentar novamente quando quiser.');
