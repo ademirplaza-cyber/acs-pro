@@ -7,7 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { plan, userId, userEmail, userName } = req.body;
+  const { plan, userId, userEmail, userName, cpfCnpj } = req.body;
   if (!plan || !userId || !userEmail) {
     return res.status(400).json({ error: 'Dados obrigatórios: plan, userId, userEmail' });
   }
@@ -36,17 +36,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       customerId = searchData.data[0].id;
     } else {
       // Criar novo cliente
+      const customerBody: Record<string, string> = {
+        name: userName || userEmail.split('@')[0],
+        email: userEmail,
+        externalReference: userId,
+      };
+
+      if (cpfCnpj) {
+        customerBody.cpfCnpj = cpfCnpj;
+      }
+
       const createRes = await fetch(`${ASAAS_API_URL}/customers`, {
         method: 'POST',
         headers: {
           'access_token': ASAAS_API_KEY,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: userName || userEmail.split('@')[0],
-          email: userEmail,
-          externalReference: userId,
-        }),
+        body: JSON.stringify(customerBody),
       });
       const createData = await createRes.json();
 

@@ -24,8 +24,17 @@ export default function Subscription() {
   const [isLoading, setIsLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'verifying' | 'success' | 'error' | 'cancelled'>('idle');
   const [message, setMessage] = useState('');
+  const [cpf, setCpf] = useState('');
 
-    useEffect(() => {
+  const formatCPF = (value: string) => {
+    const nums = value.replace(/\D/g, '').slice(0, 11);
+    return nums
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  };
+
+  useEffect(() => {
     const hash = window.location.hash;
     const hashParts = hash.split('?');
     const params = new URLSearchParams(hashParts[1] || '');
@@ -44,7 +53,7 @@ export default function Subscription() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-    const handleVerifyPayment = async (paymentOrSessionId: string) => {
+  const handleVerifyPayment = async (paymentOrSessionId: string) => {
     try {
       const response = await fetch('/api/verify-payment', {
         method: 'POST',
@@ -73,7 +82,6 @@ export default function Subscription() {
         setMessage('Pagamento confirmado! Sua assinatura está ativa.');
         window.location.hash = '#/subscription';
       } else if (data.success && !data.paid) {
-        // Pagamento pendente (boleto/PIX)
         setPaymentStatus('idle');
         setMessage('Pagamento pendente. Assim que for confirmado, sua assinatura será ativada automaticamente.');
       } else {
@@ -91,6 +99,13 @@ export default function Subscription() {
     if (!user) return;
     setIsLoading(true);
 
+    if (cpf.replace(/\D/g, '').length !== 11) {
+      setMessage('Informe um CPF válido para prosseguir.');
+      setPaymentStatus('error');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/create-checkout', {
         method: 'POST',
@@ -100,6 +115,7 @@ export default function Subscription() {
           userId: user.id,
           userEmail: user.email,
           userName: user.name,
+          cpfCnpj: cpf.replace(/\D/g, ''),
         }),
       });
 
@@ -323,6 +339,21 @@ export default function Subscription() {
             ))}
           </ul>
         </div>
+      </div>
+
+      {/* Campo CPF */}
+      <div className="max-w-md mx-auto mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+          CPF (necessário para o pagamento)
+        </label>
+        <input
+          type="text"
+          value={cpf}
+          onChange={(e) => setCpf(formatCPF(e.target.value))}
+          placeholder="000.000.000-00"
+          maxLength={14}
+          className="w-full px-4 py-3 border border-gray-300 rounded-xl text-center text-lg tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
       </div>
 
       {/* Botão assinar */}
