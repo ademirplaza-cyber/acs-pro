@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Family, Address } from '../types';
+import { usePageTracking } from '../hooks/usePageTracking';
 import {
   Users,
   Plus,
@@ -47,6 +48,7 @@ function removeFromOfflineFamiliesQueue(familyId: string) {
 
 export const Families = () => {
   const { user } = useAuth();
+  usePageTracking('FAMILIES', 'VIEW_FAMILIES');
   const navigate = useNavigate();
 
   const [families, setFamilies] = useState<Family[]>([]);

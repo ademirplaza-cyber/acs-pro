@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { MeetingTopic } from '../types';
+import { usePageTracking } from '../hooks/usePageTracking';
 import {
   RefreshCw,
   Plus,
@@ -13,6 +14,7 @@ import {
 
 export const Meeting = () => {
   const { user } = useAuth();
+  usePageTracking('MEETING', 'VIEW_MEETING');
   const [isLoading, setIsLoading] = useState(true);
   const [meetingTopics, setMeetingTopics] = useState<MeetingTopic[]>([]);
   const [meetingForm, setMeetingForm] = useState({ title: '', observations: '' });

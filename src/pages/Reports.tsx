@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Person, Visit, VisitStatus, Family } from '../types';
+import { usePageTracking } from '../hooks/usePageTracking';
 import {
   Download,
   Users,
@@ -461,6 +462,7 @@ function generateSearchResultsPDF(
 
 export const Reports = () => {
   const { user } = useAuth();
+  usePageTracking('REPORTS', 'VIEW_REPORTS');
   const [viewMode, setViewMode] = useState<ViewMode>('OVERVIEW');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [isLoading, setIsLoading] = useState(true);

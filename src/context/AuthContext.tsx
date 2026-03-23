@@ -159,8 +159,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('acs_current_user', JSON.stringify(foundUser));
       console.log('✅ Usuário carregado:', foundUser.name, `(${foundUser.role})`);
 
-      // Iniciar notificações automáticas
+            // Iniciar notificações automáticas
       startNotificationScheduler(foundUser);
+
+      // Registrar atividade de login
+      api.logActivity(foundUser.id, foundUser.name, 'LOGIN', 'LOGIN');
 
       return true;
 
@@ -238,8 +241,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // ============================================
   // LOGOUT
   // ============================================
-  const logout = () => {
+    const logout = () => {
     console.log('🚪 Logout:', user?.name);
+    // Registrar atividade de logout
+    if (user) {
+      api.logActivity(user.id, user.name, 'LOGOUT', 'LOGIN');
+    }
     stopNotificationScheduler();
     setUser(null);
     localStorage.removeItem('acs_current_user');

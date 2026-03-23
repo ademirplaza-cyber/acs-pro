@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Visit, VisitStatus, PriorityLevel, Family } from '../types';
+import { usePageTracking } from '../hooks/usePageTracking';
 import {
   ClipboardList,
   Plus,
@@ -58,6 +59,7 @@ function removeFromOfflineQueue(visitId: string) {
 
 export const Visits = () => {
   const { user } = useAuth();
+  usePageTracking('VISITS', 'VIEW_VISITS');
 
   const [visits, setVisits] = useState<Visit[]>([]);
   const [families, setFamilies] = useState<Family[]>([]);

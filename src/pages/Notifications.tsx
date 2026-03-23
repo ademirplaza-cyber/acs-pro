@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTracking } from '../hooks/usePageTracking';
 import {
   Bell,
   BellRing,
@@ -41,6 +42,7 @@ type FilterTab = 'ALL' | 'UNREAD' | 'URGENT' | 'VISITS' | 'HEALTH' | 'SYSTEM';
 
 const Notifications: React.FC = () => {
   const { user } = useAuth();
+  usePageTracking('NOTIFICATIONS', 'VIEW_NOTIFICATIONS');
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);

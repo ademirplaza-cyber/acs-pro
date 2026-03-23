@@ -943,5 +943,86 @@ export const api = {
     }
     console.log('✅ Assunto para reunião excluído com sucesso');
   },
+    // ============================================
+  // LOGS DE ATIVIDADE (Métricas de Uso)
+  // ============================================
+
+  async logActivity(userId: string, userName: string, action: string, page: string, details?: string): Promise<void> {
+    try {
+      await supabase.from('user_activity_logs').insert({
+        user_id: userId,
+        user_name: userName,
+        action,
+        page,
+        details: details || null,
+      });
+    } catch (error) {
+      console.error('Erro ao registrar atividade:', error);
+    }
+  },
+
+  async getActivityLogs(days: number = 30): Promise<any[]> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from('user_activity_logs')
+      .select('*')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar logs:', error);
+      return [];
+    }
+    return data || [];
+  },
+
+  async getActivitySummary(days: number = 30): Promise<{
+    totalActions: number;
+    uniqueUsers: number;
+    actionCounts: Record<string, number>;
+    pageCounts: Record<string, number>;
+    userActivity: { userId: string; userName: string; count: number; lastAction: string }[];
+    dailyActivity: { date: string; count: number }[];
+  }> {
+    const logs = await api.getActivityLogs(days);
+
+    const actionCounts: Record<string, number> = {};
+    const pageCounts: Record<string, number> = {};
+    const userMap: Record<string, { userName: string; count: number; lastAction: string }> = {};
+    const dailyMap: Record<string, number> = {};
+
+    logs.forEach((log: any) => {
+      actionCounts[log.action] = (actionCounts[log.action] || 0) + 1;
+      pageCounts[log.page] = (pageCounts[log.page] || 0) + 1;
+
+      if (!userMap[log.user_id]) {
+        userMap[log.user_id] = { userName: log.user_name, count: 0, lastAction: log.created_at };
+      }
+      userMap[log.user_id].count++;
+      if (log.created_at > userMap[log.user_id].lastAction) {
+        userMap[log.user_id].lastAction = log.created_at;
+      }
+
+      const day = log.created_at.substring(0, 10);
+      dailyMap[day] = (dailyMap[day] || 0) + 1;
+    });
+
+    const userActivity = Object.entries(userMap)
+      .map(([userId, data]) => ({ userId, ...data }))
+      .sort((a, b) => b.count - a.count);
+
+    const dailyActivity = Object.entries(dailyMap)
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return {
+      totalActions: logs.length,
+      uniqueUsers: Object.keys(userMap).length,
+      actionCounts,
+      pageCounts,
+      userActivity,
+      dailyActivity,
+    };
+  },
 
 };

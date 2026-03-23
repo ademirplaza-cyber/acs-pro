@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Family, Visit } from '../types';
+import { usePageTracking } from '../hooks/usePageTracking';
 import {
   Users,
   ClipboardList,
@@ -21,6 +22,7 @@ import { VisitStatus, PriorityLevel } from '../types';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  usePageTracking('DASHBOARD', 'VIEW_DASHBOARD');
 
   // ============================================
   // ESTADOS — dados carregados do Supabase

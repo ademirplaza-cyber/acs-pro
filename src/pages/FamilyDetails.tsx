@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { Family, Person } from '../types';
 import { FileDown } from 'lucide-react';
 import { exportFamilyPDF } from '../utils/exportFamilyPDF';
+import { usePageTracking } from '../hooks/usePageTracking';
 import { 
   User, 
   Users, 
@@ -47,6 +48,7 @@ export const FamilyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  usePageTracking('FAMILY_DETAILS', 'VIEW_FAMILY_DETAILS');
   
   const [family, setFamily] = useState<Family | null>(null);
   const [isFamilyLoading, setIsFamilyLoading] = useState(true);

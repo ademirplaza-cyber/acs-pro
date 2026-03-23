@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { pushNotificationService } from '../services/pushNotificationService';
+import { usePageTracking } from '../hooks/usePageTracking';
 import {
   User,
   Save,
@@ -22,6 +23,7 @@ import {
 
 export const Profile = () => {
   const { user, refreshUser } = useAuth();
+  usePageTracking('PROFILE', 'VIEW_PROFILE');
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
