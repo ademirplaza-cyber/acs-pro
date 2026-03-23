@@ -159,11 +159,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('acs_current_user', JSON.stringify(foundUser));
       console.log('✅ Usuário carregado:', foundUser.name, `(${foundUser.role})`);
 
-            // Iniciar notificações automáticas
+      // Iniciar notificações automáticas
       startNotificationScheduler(foundUser);
 
-      // Registrar atividade de login
-      api.logActivity(foundUser.id, foundUser.name, 'LOGIN', 'LOGIN');
+      // Registrar atividade de login (apenas agentes)
+      if (foundUser.role !== UserRole.ADMIN) {
+        api.logActivity(foundUser.id, foundUser.name, 'LOGIN', 'LOGIN');
+      }
 
       return true;
 
@@ -241,10 +243,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // ============================================
   // LOGOUT
   // ============================================
-    const logout = () => {
+  const logout = () => {
     console.log('🚪 Logout:', user?.name);
-    // Registrar atividade de logout
-    if (user) {
+    // Registrar atividade de logout (apenas agentes)
+    if (user && user.role !== UserRole.ADMIN) {
       api.logActivity(user.id, user.name, 'LOGOUT', 'LOGIN');
     }
     stopNotificationScheduler();
