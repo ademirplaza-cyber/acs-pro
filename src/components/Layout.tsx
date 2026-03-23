@@ -376,23 +376,27 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </button>
         </div>
 
-        {/* Menu Items */}
+                {/* Menu Items */}
         <div className="p-4 flex flex-col flex-1 overflow-y-auto">
-          <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
-          <NavItem to="/reports" icon={PieChart} label="Relatórios e Grupos" />
-          <NavItem to="/visits" icon={ClipboardList} label="Visitas Pendentes" />
-          <NavItem to="/families" icon={Users} label="Famílias & Pacientes" />
-          <NavItem to="/meeting" icon={MessageSquare} label="Reunião" />
-          <NavItem to="/notifications" icon={Bell} label="Notificações" />
-          <NavItem to="/profile" icon={UserCircle} label="Meu Perfil" />
-<NavItem to="/tutorial" icon={BookOpen} label="Tutorial" />
-<NavItem to="/subscription" icon={CreditCard} label="Assinatura" />
-          
-          {user?.role === UserRole.ADMIN && (
-            <div className="pt-4 mt-4 border-t border-slate-100">
-              <p className="px-4 text-xs font-semibold text-slate-400 uppercase mb-2">Administração</p>
+          {user?.role === UserRole.ADMIN ? (
+            <>
               <NavItem to="/admin" icon={UserCog} label="Gerenciar Agentes" />
-            </div>
+              <NavItem to="/notifications" icon={Bell} label="Notificações" />
+              <NavItem to="/profile" icon={UserCircle} label="Meu Perfil" />
+              <NavItem to="/tutorial" icon={BookOpen} label="Tutorial" />
+            </>
+          ) : (
+            <>
+              <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
+              <NavItem to="/reports" icon={PieChart} label="Relatórios e Grupos" />
+              <NavItem to="/visits" icon={ClipboardList} label="Visitas Pendentes" />
+              <NavItem to="/families" icon={Users} label="Famílias & Pacientes" />
+              <NavItem to="/meeting" icon={MessageSquare} label="Reunião" />
+              <NavItem to="/notifications" icon={Bell} label="Notificações" />
+              <NavItem to="/profile" icon={UserCircle} label="Meu Perfil" />
+              <NavItem to="/tutorial" icon={BookOpen} label="Tutorial" />
+              <NavItem to="/subscription" icon={CreditCard} label="Assinatura" />
+            </>
           )}
         </div>
 
@@ -497,11 +501,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 
       {/* Navegação Mobile Bottom */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-16 flex items-center justify-around z-30 safe-area-bottom shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
-        <NavItem to="/" icon={LayoutDashboard} label="Início" mobile />
-        <NavItem to="/visits" icon={ClipboardList} label="Visitas" mobile />
-        <NavItem to="/families" icon={Users} label="Famílias" mobile />
-        <NavItem to="/reports" icon={PieChart} label="Relatórios" mobile />
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-16 flex items-center justify-around z-30 safe-area-bottom shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
+        {user?.role === UserRole.ADMIN ? (
+          <>
+            <NavItem to="/admin" icon={UserCog} label="Agentes" mobile />
+            <NavItem to="/notifications" icon={Bell} label="Alertas" mobile />
+            <NavItem to="/profile" icon={UserCircle} label="Perfil" mobile />
+          </>
+        ) : (
+          <>
+            <NavItem to="/" icon={LayoutDashboard} label="Início" mobile />
+            <NavItem to="/visits" icon={ClipboardList} label="Visitas" mobile />
+            <NavItem to="/families" icon={Users} label="Famílias" mobile />
+            <NavItem to="/reports" icon={PieChart} label="Relatórios" mobile />
+          </>
+        )}
         <button 
           onClick={() => setIsSidebarOpen(true)}
           className="flex flex-col items-center justify-center space-y-1 flex-1 py-2 h-full text-slate-500 relative"
