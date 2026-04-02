@@ -231,6 +231,19 @@ export interface NotificationSettings {
 }
 
 // ============================================
+// SUGGESTION
+// ============================================
+
+export interface Suggestion {
+  id: string;
+  agentId: string;
+  agentName: string;
+  message: string;
+  status: 'PENDING' | 'READ';
+  createdAt: string;
+}
+
+// ============================================
 // SYNC
 // ============================================
 

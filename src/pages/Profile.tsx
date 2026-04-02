@@ -16,8 +16,11 @@ import {
   Bell,
   BellOff,
   BellRing,
-  Loader2
+  Loader2,
+  Lightbulb,
+  Send
 } from 'lucide-react';
+import { UserRole } from '../types';
 
 export const Profile = () => {
   const { user, refreshUser } = useAuth();
@@ -29,6 +32,10 @@ export const Profile = () => {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+
+  const [suggestionsEnabled, setSuggestionsEnabled] = useState(false);
+  const [suggestionText, setSuggestionText] = useState('');
+  const [suggestionStatus, setSuggestionStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -50,6 +57,14 @@ export const Profile = () => {
         equipe: user.equipe || '',
         address: user.address || '',
         cityState: user.cityState || '',
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user?.role === UserRole.AGENT) {
+      api.getSetting('suggestions_enabled').then((val) => {
+        setSuggestionsEnabled(val === 'true');
       });
     }
   }, [user]);
@@ -176,6 +191,20 @@ export const Profile = () => {
       setTimeout(() => setSaveStatus('idle'), 4000);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSubmitSuggestion = async () => {
+    if (!user || !suggestionText.trim()) return;
+    setSuggestionStatus('sending');
+    try {
+      await api.submitSuggestion(user.id, user.name, suggestionText.trim());
+      setSuggestionText('');
+      setSuggestionStatus('success');
+      setTimeout(() => setSuggestionStatus('idle'), 4000);
+    } catch {
+      setSuggestionStatus('error');
+      setTimeout(() => setSuggestionStatus('idle'), 4000);
     }
   };
 
@@ -428,6 +457,60 @@ export const Profile = () => {
           )}
         </button>
       </form>
+
+      {/* Seção de Sugestões — visível apenas para agentes quando ativada pelo admin */}
+      {user.role === UserRole.AGENT && suggestionsEnabled && (
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h2 className="font-bold text-slate-800 mb-1 flex items-center">
+            <span className="bg-yellow-100 text-yellow-600 w-8 h-8 rounded-lg flex items-center justify-center mr-3 text-sm">
+              <Lightbulb size={16} />
+            </span>
+            Enviar Sugestão
+          </h2>
+          <p className="text-slate-500 text-sm mb-4 ml-11">
+            Tem uma ideia para melhorar o app? Compartilhe com a equipe!
+          </p>
+
+          {suggestionStatus === 'success' && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center space-x-2 mb-4">
+              <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
+              <p className="text-green-700 text-sm font-medium">Sugestão enviada com sucesso! Obrigado.</p>
+            </div>
+          )}
+          {suggestionStatus === 'error' && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center space-x-2 mb-4">
+              <AlertCircle size={16} className="text-red-600 flex-shrink-0" />
+              <p className="text-red-700 text-sm font-medium">Erro ao enviar. Verifique sua conexão.</p>
+            </div>
+          )}
+
+          <textarea
+            value={suggestionText}
+            onChange={(e) => setSuggestionText(e.target.value)}
+            placeholder="Descreva sua sugestão de melhoria..."
+            rows={4}
+            disabled={suggestionStatus === 'sending'}
+            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-yellow-400 focus:ring-4 focus:ring-yellow-100 outline-none resize-none text-sm disabled:opacity-50"
+          />
+          <button
+            onClick={handleSubmitSuggestion}
+            disabled={!suggestionText.trim() || suggestionStatus === 'sending'}
+            className="mt-3 w-full px-4 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-xl transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {suggestionStatus === 'sending' ? (
+              <>
+                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                <span>Enviando...</span>
+              </>
+            ) : (
+              <>
+                <Send size={16} />
+                <span>Enviar Sugestão</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

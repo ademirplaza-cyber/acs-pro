@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Family, Person, Visit, User, UserRole, UserStatus, MeetingTopic } from '../types';
+import { Family, Person, Visit, User, UserRole, UserStatus, MeetingTopic, Suggestion } from '../types';
 
 export const api = {
 
@@ -1023,6 +1023,82 @@ export const api = {
       userActivity,
       dailyActivity,
     };
+  },
+
+  // ============================================
+  // CONFIGURAÇÕES DO APP
+  // ============================================
+
+  async getSetting(key: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', key)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.value ?? null;
+    } catch (error) {
+      console.error('❌ Erro ao buscar configuração:', error);
+      return null;
+    }
+  },
+
+  async setSetting(key: string, value: string): Promise<void> {
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert({ key, value, updated_at: new Date().toISOString() });
+    if (error) {
+      console.error('❌ Erro ao salvar configuração:', error);
+      throw error;
+    }
+  },
+
+  // ============================================
+  // SUGESTÕES DOS AGENTES
+  // ============================================
+
+  async submitSuggestion(agentId: string, agentName: string, message: string): Promise<void> {
+    const { error } = await supabase
+      .from('suggestions')
+      .insert({ agent_id: agentId, agent_name: agentName, message, status: 'PENDING' });
+    if (error) {
+      console.error('❌ Erro ao enviar sugestão:', error);
+      throw error;
+    }
+    console.log('✅ Sugestão enviada com sucesso');
+  },
+
+  async getSuggestions(): Promise<Suggestion[]> {
+    const { data, error } = await supabase
+      .from('suggestions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('❌ Erro ao buscar sugestões:', error);
+      throw error;
+    }
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      agentId: row.agent_id,
+      agentName: row.agent_name,
+      message: row.message,
+      status: row.status as 'PENDING' | 'READ',
+      createdAt: row.created_at,
+    }));
+  },
+
+  async markSuggestionAsRead(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('suggestions')
+      .update({ status: 'READ' })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async deleteSuggestion(id: string): Promise<void> {
+    const { error } = await supabase.from('suggestions').delete().eq('id', id);
+    if (error) throw error;
   },
 
 };

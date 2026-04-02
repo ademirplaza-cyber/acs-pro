@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__765cdc3d-2629-4ede-95db-5efb6c03da92__list_projects",
+      "mcp__765cdc3d-2629-4ede-95db-5efb6c03da92__apply_migration",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start",
+      "mcp__765cdc3d-2629-4ede-95db-5efb6c03da92__execute_sql"
+    ]
+  }
+}

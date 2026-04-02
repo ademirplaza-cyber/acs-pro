@@ -7,8 +7,10 @@ import {
   Shield, Edit2, Trash2, RefreshCw, Search, Filter, AlertCircle,
   Calendar, Activity, Eye, EyeOff, Save, X,
   BarChart3, MapPin, TrendingUp,
-  LogIn, MousePointerClick, UserX
+  LogIn, MousePointerClick, UserX,
+  Lightbulb, ToggleLeft, ToggleRight, MessageCircle
 } from 'lucide-react';
+import { Suggestion } from '../types';
 
 const StatCard: React.FC<{
   title: string;
@@ -36,7 +38,7 @@ export const Admin: React.FC = () => {
 
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'users' | 'usage' | 'subscriptions'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'usage' | 'subscriptions' | 'suggestions'>('users');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -56,6 +58,11 @@ export const Admin: React.FC = () => {
     dailyActivity: { date: string; count: number }[];
   } | null>(null);
   const [isLoadingUsage, setIsLoadingUsage] = useState(false);
+
+  const [suggestionsEnabled, setSuggestionsEnabled] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isTogglingsuggestions, setIsTogglingsuggestions] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '', email: '', password: '123456', role: 'AGENT' as string, status: 'ACTIVE' as string,
@@ -87,10 +94,78 @@ export const Admin: React.FC = () => {
     }
   };
 
+  const loadSuggestions = async () => {
+    try {
+      setIsLoadingSuggestions(true);
+      const [data, setting] = await Promise.all([
+        api.getSuggestions(),
+        api.getSetting('suggestions_enabled'),
+      ]);
+      setSuggestions(data);
+      setSuggestionsEnabled(setting === 'true');
+    } catch (_error) {
+      console.error('Erro ao carregar sugestões');
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleToggleSuggestions = async () => {
+    setIsTogglingsuggestions(true);
+    try {
+      const newValue = !suggestionsEnabled;
+      await api.setSetting('suggestions_enabled', newValue ? 'true' : 'false');
+      setSuggestionsEnabled(newValue);
+
+      // Ao ativar, notifica todos os agentes ativos
+      if (newValue) {
+        const allUsers = await api.getUsers();
+        const agents = allUsers.filter(u => u.role === UserRole.AGENT && u.status === UserStatus.ACTIVE);
+        await Promise.all(agents.map(agent =>
+          api.createNotification({
+            type: 'SYSTEM',
+            priority: 'LOW',
+            title: '💡 Agora você pode enviar sugestões!',
+            message: 'Acesse Meu Perfil e use o campo "Enviar Sugestão" para compartilhar ideias de melhoria do app.',
+            agentId: agent.id,
+            actionUrl: '/profile',
+          })
+        ));
+        showMessage('success', `Campo ativado! ${agents.length} agente(s) notificado(s).`);
+      } else {
+        showMessage('success', 'Campo de sugestões desativado.');
+      }
+    } catch (_e) {
+      showMessage('error', 'Erro ao alterar configuração.');
+    } finally {
+      setIsTogglingsuggestions(false);
+    }
+  };
+
+  const handleMarkSuggestionRead = async (id: string) => {
+    try {
+      await api.markSuggestionAsRead(id);
+      setSuggestions((prev) => prev.map((s) => s.id === id ? { ...s, status: 'READ' } : s));
+    } catch (_e) {
+      showMessage('error', 'Erro ao marcar sugestão.');
+    }
+  };
+
+  const handleDeleteSuggestion = async (id: string) => {
+    if (!confirm('Excluir esta sugestão?')) return;
+    try {
+      await api.deleteSuggestion(id);
+      setSuggestions((prev) => prev.filter((s) => s.id !== id));
+    } catch (_e) {
+      showMessage('error', 'Erro ao excluir sugestão.');
+    }
+  };
+
   useEffect(() => { loadData(); }, []);
 
   useEffect(() => {
     if (activeTab === 'usage') loadUsageSummary(usagePeriod);
+    if (activeTab === 'suggestions') loadSuggestions();
   }, [activeTab, usagePeriod]);
 
   const showMessage = (type: 'success' | 'error', text: string) => {
@@ -267,6 +342,7 @@ export const Admin: React.FC = () => {
           { key: 'users' as const, icon: <Users className="w-4 h-4" />, label: 'Usuários', count: stats.total },
           { key: 'subscriptions' as const, icon: <Calendar className="w-4 h-4" />, label: 'Assinaturas', count: undefined },
           { key: 'usage' as const, icon: <BarChart3 className="w-4 h-4" />, label: 'Uso do Sistema', count: undefined },
+          { key: 'suggestions' as const, icon: <Lightbulb className="w-4 h-4" />, label: 'Sugestões', count: undefined },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${activeTab === tab.key ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -665,6 +741,110 @@ export const Admin: React.FC = () => {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== ABA SUGESTÕES ========== */}
+      {activeTab === 'suggestions' && (
+        <div className="space-y-4">
+
+          {/* Card de controle */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <Lightbulb className="w-5 h-5 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800">Campo de Sugestões</p>
+                  <p className="text-sm text-gray-500">
+                    {suggestionsEnabled
+                      ? 'Agentes podem enviar sugestões de melhoria pelo perfil.'
+                      : 'O campo está desativado — agentes não veem a opção.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleToggleSuggestions}
+                disabled={isTogglingsuggestions}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 ${
+                  suggestionsEnabled
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {suggestionsEnabled
+                  ? <><ToggleRight className="w-5 h-5" />Ativado</>
+                  : <><ToggleLeft className="w-5 h-5" />Desativado</>}
+              </button>
+            </div>
+          </div>
+
+          {/* Lista de sugestões */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-gray-500" />
+                Sugestões recebidas ({suggestions.filter(s => s.status === 'PENDING').length} novas)
+              </h3>
+              {suggestions.length > 0 && (
+                <button onClick={loadSuggestions} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                  <RefreshCw className="w-3 h-3" />Atualizar
+                </button>
+              )}
+            </div>
+
+            {isLoadingSuggestions ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500" />
+              </div>
+            ) : suggestions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <Lightbulb className="w-10 h-10 mb-2 opacity-40" />
+                <p className="text-sm">Nenhuma sugestão recebida ainda.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {suggestions.map((s) => (
+                  <div key={s.id} className={`p-4 flex gap-3 ${s.status === 'READ' ? 'opacity-60' : ''}`}>
+                    <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
+                      {s.agentName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-gray-800 text-sm">{s.agentName}</span>
+                        {s.status === 'PENDING' && (
+                          <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">Nova</span>
+                        )}
+                        <span className="text-xs text-gray-400 ml-auto flex-shrink-0">
+                          {new Date(s.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{s.message}</p>
+                    </div>
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      {s.status === 'PENDING' && (
+                        <button
+                          onClick={() => handleMarkSuggestionRead(s.id)}
+                          title="Marcar como lida"
+                          className="p-1.5 rounded-lg hover:bg-green-100 text-gray-400 hover:text-green-600 transition-colors"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteSuggestion(s.id)}
+                        title="Excluir"
+                        className="p-1.5 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
