@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { pushNotificationService } from '../services/pushNotificationService';
@@ -24,6 +25,8 @@ import { UserRole } from '../types';
 
 export const Profile = () => {
   const { user, refreshUser } = useAuth();
+  const location = useLocation();
+  const suggestionRef = useRef<HTMLDivElement>(null);
   usePageTracking('PROFILE', 'VIEW_PROFILE');
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -68,6 +71,15 @@ export const Profile = () => {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('section') === 'suggestions' && suggestionRef.current) {
+      setTimeout(() => {
+        suggestionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 400);
+    }
+  }, [location.search, suggestionsEnabled]);
 
   useEffect(() => {
     const checkPush = async () => {
@@ -460,16 +472,32 @@ export const Profile = () => {
 
       {/* Seção de Sugestões — visível apenas para agentes quando ativada pelo admin */}
       {user.role === UserRole.AGENT && suggestionsEnabled && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div ref={suggestionRef} className="bg-white p-6 rounded-2xl border-2 border-yellow-300 shadow-sm scroll-mt-4">
           <h2 className="font-bold text-slate-800 mb-1 flex items-center">
             <span className="bg-yellow-100 text-yellow-600 w-8 h-8 rounded-lg flex items-center justify-center mr-3 text-sm">
               <Lightbulb size={16} />
             </span>
-            Enviar Sugestão
+            Enviar Sugestão de Melhoria
           </h2>
           <p className="text-slate-500 text-sm mb-4 ml-11">
-            Tem uma ideia para melhorar o app? Compartilhe com a equipe!
+            Sua opinião ajuda a melhorar o ACS Top para todos os agentes!
           </p>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 space-y-2">
+            <p className="text-xs font-semibold text-yellow-800 uppercase tracking-wide mb-1">Como funciona</p>
+            <div className="flex items-start gap-2 text-sm text-yellow-900">
+              <span className="font-bold shrink-0">1.</span>
+              <span>Escreva sua sugestão no campo abaixo — pode ser uma ideia nova, uma melhoria ou algo que está te atrapalhando.</span>
+            </div>
+            <div className="flex items-start gap-2 text-sm text-yellow-900">
+              <span className="font-bold shrink-0">2.</span>
+              <span>Clique em <strong>"Enviar Sugestão"</strong> e sua mensagem chegará diretamente ao administrador do sistema.</span>
+            </div>
+            <div className="flex items-start gap-2 text-sm text-yellow-900">
+              <span className="font-bold shrink-0">3.</span>
+              <span>As melhores sugestões são implementadas nas próximas atualizações do app.</span>
+            </div>
+          </div>
 
           {suggestionStatus === 'success' && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center space-x-2 mb-4">

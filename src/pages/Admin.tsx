@@ -128,7 +128,7 @@ export const Admin: React.FC = () => {
             title: '💡 Agora você pode enviar sugestões!',
             message: 'Acesse Meu Perfil e use o campo "Enviar Sugestão" para compartilhar ideias de melhoria do app.',
             agentId: agent.id,
-            actionUrl: '/profile',
+            actionUrl: '/profile?section=suggestions',
           })
         ));
         showMessage('success', `Campo ativado! ${agents.length} agente(s) notificado(s).`);
