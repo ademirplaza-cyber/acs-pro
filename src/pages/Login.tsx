@@ -24,7 +24,6 @@ import {
   X,
   MapPin,
   Building2,
-  CreditCard,
   Search,
 } from 'lucide-react';
 
@@ -96,34 +95,10 @@ const SubmitButton = ({
 // HELPERS
 // ============================================
 
-const formatCPF = (value: string): string => {
-  const digits = value.replace(/\D/g, '').slice(0, 11);
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-};
-
 const formatCEP = (value: string): string => {
   const digits = value.replace(/\D/g, '').slice(0, 8);
   if (digits.length <= 5) return digits;
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-};
-
-const isValidCPF = (cpf: string): boolean => {
-  const digits = cpf.replace(/\D/g, '');
-  if (digits.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(digits)) return false;
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
-  let rest = (sum * 10) % 11;
-  if (rest === 10) rest = 0;
-  if (rest !== parseInt(digits[9])) return false;
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
-  rest = (sum * 10) % 11;
-  if (rest === 10) rest = 0;
-  return rest === parseInt(digits[10]);
 };
 
 // ============================================
@@ -224,14 +199,12 @@ export const Login: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Novos campos de cadastro
-  const [cpf, setCpf] = useState('');
+  // Campos de cadastro
   const [cep, setCep] = useState('');
   const [address, setAddress] = useState('');
   const [addressNumber, setAddressNumber] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
   const [cityState, setCityState] = useState('');
-  const [healthUnit, setHealthUnit] = useState('');
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [cepMessage, setCepMessage] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null);
 
@@ -332,13 +305,8 @@ export const Login: React.FC = () => {
     try {
       const fullAddress = buildFullAddress();
 
-      if (!name.trim() || !email.trim() || !password.trim() || !cpf.trim() || !fullAddress.trim() || !cityState.trim() || !healthUnit.trim()) {
+      if (!name.trim() || !email.trim() || !password.trim() || !fullAddress.trim() || !cityState.trim()) {
         setError('Preencha todos os campos obrigatórios.');
-        setIsLoading(false);
-        return;
-      }
-      if (!isValidCPF(cpf)) {
-        setError('CPF inválido. Verifique o número digitado.');
         setIsLoading(false);
         return;
       }
@@ -358,10 +326,8 @@ export const Login: React.FC = () => {
         return;
       }
       const result = await register(name.trim(), email.trim(), password, {
-        cpf: cpf.replace(/\D/g, ''),
         address: fullAddress,
         cityState: cityState.trim(),
-        healthUnit: healthUnit.trim(),
       });
       if (result) {
         setSuccess('Conta criada com sucesso! Aguarde a aprovação do administrador.');
@@ -369,13 +335,11 @@ export const Login: React.FC = () => {
         setName('');
         setEmail('');
         setPassword('');
-        setCpf('');
         setCep('');
         setAddress('');
         setAddressNumber('');
         setNeighborhood('');
         setCityState('');
-        setHealthUnit('');
         setAcceptedTerms(false);
         setCepMessage(null);
       } else {
@@ -783,17 +747,6 @@ export const Login: React.FC = () => {
                     />
 
                     <InputField
-                      label="CPF"
-                      value={cpf}
-                      onChange={(v) => setCpf(formatCPF(v))}
-                      placeholder="000.000.000-00"
-                      icon={CreditCard}
-                      disabled={isLoading}
-                      required
-                      maxLength={14}
-                    />
-
-                    <InputField
                       label="Email"
                       type="email"
                       value={email}
@@ -917,16 +870,6 @@ export const Login: React.FC = () => {
                     {/* FIM DA SEÇÃO DE ENDEREÇO */}
                     {/* ============================================ */}
 
-                    <InputField
-                      label="Unidade de Saúde"
-                      value={healthUnit}
-                      onChange={setHealthUnit}
-                      placeholder="Nome da UBS / ESF"
-                      icon={Activity}
-                      disabled={isLoading}
-                      required
-                    />
-
                     {/* CHECKBOX DE TERMOS E CONDIÇÕES */}
                     <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
                       <input
@@ -961,8 +904,8 @@ export const Login: React.FC = () => {
                   <div className="mt-5 p-4 bg-blue-50 rounded-xl border border-blue-100">
                     <p className="text-xs text-blue-800 font-semibold mb-2">Como funciona o registro:</p>
                     <div className="space-y-1.5">
-                      {[
-                        'Preencha seus dados pessoais e profissionais',
+                      {[ 
+                        'Preencha seus dados básicos e endereço',
                         'Aceite os Termos e Condições de Uso',
                         'Sua conta ficará com status "Pendente"',
                         'O administrador irá aprovar seu acesso',

@@ -8,8 +8,6 @@ import {
   Save,
   MapPin,
   Phone,
-  CreditCard,
-  Building2,
   Users,
   Hash,
   FileText,
@@ -35,11 +33,9 @@ export const Profile = () => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    cpf: '',
     cns: '',
     microarea: '',
     equipe: '',
-    healthUnit: '',
     address: '',
     cityState: '',
   });
@@ -49,11 +45,9 @@ export const Profile = () => {
       setFormData({
         name: user.name || '',
         phone: user.phone || '',
-        cpf: user.cpf || '',
         cns: user.cns || '',
         microarea: user.microarea || '',
         equipe: user.equipe || '',
-        healthUnit: user.healthUnit || '',
         address: user.address || '',
         cityState: user.cityState || '',
       });
@@ -166,11 +160,9 @@ export const Profile = () => {
         ...user,
         name: formData.name.trim(),
         phone: formData.phone.trim() || undefined,
-        cpf: formData.cpf.trim() || undefined,
         cns: formData.cns.trim() || undefined,
         microarea: formData.microarea.trim() || undefined,
         equipe: formData.equipe.trim() || undefined,
-        healthUnit: formData.healthUnit.trim() || undefined,
         address: formData.address.trim() || undefined,
         cityState: formData.cityState.trim() || undefined,
       });
@@ -314,33 +306,18 @@ export const Profile = () => {
                 disabled={isSaving}
               />
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  <Phone size={14} className="inline mr-1" />Telefone
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
-                  placeholder="(00) 00000-0000"
-                  disabled={isSaving}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  <CreditCard size={14} className="inline mr-1" />CPF
-                </label>
-                <input
-                  type="text"
-                  value={formData.cpf}
-                  onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
-                  placeholder="000.000.000-00"
-                  disabled={isSaving}
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <Phone size={14} className="inline mr-1" />Telefone
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
+                placeholder="(00) 00000-0000"
+                disabled={isSaving}
+              />
             </div>
           </div>
         </div>
@@ -382,33 +359,18 @@ export const Profile = () => {
                 />
               </div>
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  <Users size={14} className="inline mr-1" />Equipe
-                </label>
-                <input
-                  type="text"
-                  value={formData.equipe}
-                  onChange={(e) => setFormData({ ...formData, equipe: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none"
-                  placeholder="Ex: ESF 01, Equipe Azul..."
-                  disabled={isSaving}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  <Building2 size={14} className="inline mr-1" />Unidade de Saúde (UBS)
-                </label>
-                <input
-                  type="text"
-                  value={formData.healthUnit}
-                  onChange={(e) => setFormData({ ...formData, healthUnit: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none"
-                  placeholder="Nome da UBS"
-                  disabled={isSaving}
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <Users size={14} className="inline mr-1" />Equipe
+              </label>
+              <input
+                type="text"
+                value={formData.equipe}
+                onChange={(e) => setFormData({ ...formData, equipe: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none"
+                placeholder="Ex: ESF 01, Equipe Azul..."
+                disabled={isSaving}
+              />
             </div>
           </div>
         </div>

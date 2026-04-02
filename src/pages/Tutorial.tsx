@@ -39,7 +39,7 @@ const tutorialSections: TutorialSection[] = [
     steps: [
       {
         title: 'Criando sua conta',
-        description: 'Acesse acstop.com.br e clique em "Criar Conta". Preencha seu nome, e-mail e senha. Após o cadastro, você terá 30 dias grátis para testar todas as funcionalidades do app.',
+        description: 'Acesse acstop.com.br e clique em "Criar Conta". Preencha seu nome, e-mail, senha e endereço profissional. Após o cadastro, você terá 30 dias grátis para testar todas as funcionalidades do app.',
       },
       {
         title: 'Fazendo login',
@@ -235,11 +235,11 @@ const tutorialSections: TutorialSection[] = [
     steps: [
       {
         title: 'Dados pessoais',
-        description: 'Edite seu nome, telefone e CPF. Essas informações aparecem nos PDFs exportados.',
+        description: 'Edite seu nome e telefone para manter seu cadastro atualizado.',
       },
       {
         title: 'Dados profissionais',
-        description: 'Preencha: CNS (Cartão Nacional de Saúde), micro-área de atuação, equipe de saúde e nome da UBS (Unidade Básica de Saúde). Essas informações aparecem nos cabeçalhos dos relatórios.',
+        description: 'Preencha: CNS (Cartão Nacional de Saúde), micro-área de atuação e equipe de saúde. Essas informações ajudam na identificação profissional dentro do sistema.',
       },
       {
         title: 'Endereço',

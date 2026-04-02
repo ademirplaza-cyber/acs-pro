@@ -10,10 +10,8 @@ import { notificationService } from '../services/notificationService';
 // ============================================
 
 interface RegisterExtraData {
-  cpf?: string;
   address?: string;
   cityState?: string;
-  healthUnit?: string;
 }
 
 interface AuthContextType {
@@ -222,10 +220,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         acceptedTermsAt: '',
         createdAt: new Date().toISOString(),
-        cpf: extraData?.cpf || '',
         address: extraData?.address || '',
         cityState: extraData?.cityState || '',
-        healthUnit: extraData?.healthUnit || '',
       };
 
       // Salvar no Supabase (o banco gera o ID automaticamente)

@@ -6,7 +6,7 @@ import {
   Users, UserCheck, UserPlus, Clock, Ban, CheckCircle2, XCircle,
   Shield, Edit2, Trash2, RefreshCw, Search, Filter, AlertCircle,
   Calendar, Activity, Eye, EyeOff, Save, X,
-  BarChart3, MapPin, Building2, CreditCard, TrendingUp,
+  BarChart3, MapPin, TrendingUp,
   LogIn, MousePointerClick, UserX
 } from 'lucide-react';
 
@@ -30,13 +30,6 @@ const StatCard: React.FC<{
     </div>
   </div>
 );
-
-const displayCPF = (cpf?: string): string => {
-  if (!cpf) return '—';
-  const digits = cpf.replace(/\D/g, '');
-  if (digits.length !== 11) return cpf;
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-};
 
 export const Admin: React.FC = () => {
   const { refreshUser } = useAuth();
@@ -66,8 +59,8 @@ export const Admin: React.FC = () => {
 
   const [formData, setFormData] = useState({
     name: '', email: '', password: '123456', role: 'AGENT' as string, status: 'ACTIVE' as string,
-    phone: '', cns: '', microarea: '', equipe: '', cpf: '',
-    address: '', cityState: '', healthUnit: '', subscriptionDays: 30,
+    phone: '', cns: '', microarea: '', equipe: '',
+    address: '', cityState: '', subscriptionDays: 30,
   });
 
   const loadData = async () => {
@@ -131,8 +124,7 @@ export const Admin: React.FC = () => {
     return users.filter(u => {
       const s = searchTerm.toLowerCase();
       const matchesSearch = u.name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s) ||
-        (u.cpf && u.cpf.includes(searchTerm.replace(/\D/g, ''))) ||
-        (u.healthUnit && u.healthUnit.toLowerCase().includes(s));
+        (u.address && u.address.toLowerCase().includes(s));
       const matchesStatus = statusFilter === 'ALL' || u.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -185,12 +177,12 @@ export const Admin: React.FC = () => {
 
   const openNewUserForm = () => {
     setEditingUser(null);
-    setFormData({ name: '', email: '', password: '123456', role: 'AGENT', status: 'ACTIVE', phone: '', cns: '', microarea: '', equipe: '', cpf: '', address: '', cityState: '', healthUnit: '', subscriptionDays: 30 });
+    setFormData({ name: '', email: '', password: '123456', role: 'AGENT', status: 'ACTIVE', phone: '', cns: '', microarea: '', equipe: '', address: '', cityState: '', subscriptionDays: 30 });
     setIsFormOpen(true);
   };
   const openEditForm = (u: User) => {
     setEditingUser(u);
-    setFormData({ name: u.name, email: u.email, password: u.password || '', role: u.role, status: u.status, phone: u.phone || '', cns: u.cns || '', microarea: u.microarea || '', equipe: u.equipe || '', cpf: u.cpf || '', address: u.address || '', cityState: u.cityState || '', healthUnit: u.healthUnit || '', subscriptionDays: 30 });
+    setFormData({ name: u.name, email: u.email, password: u.password || '', role: u.role, status: u.status, phone: u.phone || '', cns: u.cns || '', microarea: u.microarea || '', equipe: u.equipe || '', address: u.address || '', cityState: u.cityState || '', subscriptionDays: 30 });
     setIsFormOpen(true);
   };
 
@@ -205,8 +197,7 @@ export const Admin: React.FC = () => {
         subscriptionExpiresAt: editingUser?.subscriptionExpiresAt || new Date(Date.now() + formData.subscriptionDays * 86400000).toISOString(),
         createdAt: editingUser?.createdAt || new Date().toISOString(),
         phone: formData.phone || '', cns: formData.cns || '', microarea: formData.microarea || '',
-        equipe: formData.equipe || '', cpf: formData.cpf.replace(/\D/g, '') || '',
-        address: formData.address.trim() || '', cityState: formData.cityState.trim() || '', healthUnit: formData.healthUnit.trim() || '',
+        equipe: formData.equipe || '', address: formData.address.trim() || '', cityState: formData.cityState.trim() || '',
       };
       await api.saveUser(userData);
       showMessage('success', editingUser ? 'Atualizado!' : 'Criado com sucesso!');
@@ -297,7 +288,7 @@ export const Admin: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input type="text" placeholder="Buscar por nome, email, CPF ou unidade..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+              <input type="text" placeholder="Buscar por nome, email ou endereço..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div className="relative">
@@ -321,7 +312,6 @@ export const Admin: React.FC = () => {
                     <div>
                       <p className="font-medium text-gray-800">{u.name}</p>
                       <p className="text-sm text-gray-500">{u.email}</p>
-                      {u.healthUnit && <p className="text-xs text-gray-400 flex items-center gap-1 mt-1"><Building2 className="w-3 h-3" />{u.healthUnit}</p>}
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => handleApprove(u.id)} className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg flex items-center gap-1"><CheckCircle2 className="w-4 h-4" />Aprovar</button>
@@ -353,7 +343,6 @@ export const Admin: React.FC = () => {
                         </div>
                         <p className="text-sm text-gray-500 mt-1">{u.email}</p>
                         <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-400">
-                          {u.healthUnit && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{u.healthUnit}</span>}
                           {u.phone && <span className="flex items-center gap-1"><Activity className="w-3 h-3" />{u.phone}</span>}
                           {u.microarea && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />Microárea: {u.microarea}</span>}
                           <span className={subInfo.color}><Calendar className="w-3 h-3 inline mr-1" />{subInfo.text}</span>
@@ -369,11 +358,9 @@ export const Admin: React.FC = () => {
                           <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                             <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1"><Shield className="w-3 h-3 text-purple-500" />Dados pessoais</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                              <div><span className="text-gray-400">CPF:</span> <span className="text-gray-700 font-medium">{displayCPF(u.cpf)}</span></div>
                               <div><span className="text-gray-400">Telefone:</span> <span className="text-gray-700 font-medium">{u.phone || '—'}</span></div>
                               <div className="sm:col-span-2"><span className="text-gray-400">Endereço:</span> <span className="text-gray-700 font-medium">{u.address || '—'}</span></div>
                               <div><span className="text-gray-400">Cidade/UF:</span> <span className="text-gray-700 font-medium">{u.cityState || '—'}</span></div>
-                              <div><span className="text-gray-400">Unidade:</span> <span className="text-gray-700 font-medium">{u.healthUnit || '—'}</span></div>
                               <div><span className="text-gray-400">CNS:</span> <span className="text-gray-700 font-medium">{u.cns || '—'}</span></div>
                               <div><span className="text-gray-400">Equipe:</span> <span className="text-gray-700 font-medium">{u.equipe || '—'}</span></div>
                               <div><span className="text-gray-400">Cadastro:</span> <span className="text-gray-700 font-medium">{u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : '—'}</span></div>
@@ -420,7 +407,6 @@ export const Admin: React.FC = () => {
                     <div>
                       <h3 className="font-medium text-gray-800">{u.name}</h3>
                       <p className="text-sm text-gray-500">{u.email}</p>
-                      {u.healthUnit && <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><Building2 className="w-3 h-3" />{u.healthUnit}</p>}
                       <p className={`text-sm font-medium mt-1 ${subInfo.color}`}>{subInfo.text}</p>
                       {u.subscriptionExpiresAt && <p className="text-xs text-gray-400">Data: {new Date(u.subscriptionExpiresAt).toLocaleDateString('pt-BR')}</p>}
                     </div>
@@ -585,20 +571,6 @@ export const Admin: React.FC = () => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nome do agente" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
-                  <div className="relative">
-                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input type="text" value={formData.cpf} onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
-                      let f = digits;
-                      if (digits.length > 3) f = `${digits.slice(0, 3)}.${digits.slice(3)}`;
-                      if (digits.length > 6) f = `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-                      if (digits.length > 9) f = `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-                      setFormData({ ...formData, cpf: f });
-                    }} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="000.000.000-00" maxLength={14} />
-                  </div>
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="email@exemplo.com" required />
@@ -643,19 +615,8 @@ export const Admin: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cidade / UF</label>
-                    <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input type="text" value={formData.cityState} onChange={(e) => setFormData({ ...formData, cityState: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg outline-none" placeholder="São Paulo / SP" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Unidade de Saúde</label>
-                    <div className="relative">
-                      <Activity className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input type="text" value={formData.healthUnit} onChange={(e) => setFormData({ ...formData, healthUnit: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg outline-none" placeholder="Nome da UBS / ESF" />
-                    </div>
+                    <input type="text" value={formData.cityState} onChange={(e) => setFormData({ ...formData, cityState: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none" placeholder="São Paulo / SP" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
