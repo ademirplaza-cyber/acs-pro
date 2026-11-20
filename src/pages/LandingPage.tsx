@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Activity,
   Users,
@@ -347,15 +347,13 @@ const LandingPage: React.FC = () => {
                 ))}
               </ul>
 
-              <a
-                href={whatsappLink('Mensal - R$ 9,90/mês')}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/login?plan=monthly"
                 className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
-                <MessageCircle size={18} />
+                <ArrowRight size={18} />
                 Assinar Mensal
-              </a>
+              </Link>
 
               <p className="text-gray-400 text-[11px] text-center mt-3">
                 Cancele quando quiser • Sem fidelidade
@@ -404,15 +402,13 @@ const LandingPage: React.FC = () => {
                 ))}
               </ul>
 
-              <a
-                href={whatsappLink('Anual - R$ 99,90/ano (melhor custo-benefício)')}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/login?plan=yearly"
                 className="w-full py-3.5 px-4 bg-white text-blue-700 font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
-                <MessageCircle size={18} />
+                <ArrowRight size={18} />
                 Assinar Anual
-              </a>
+              </Link>
 
               <p className="text-blue-200/40 text-[11px] text-center mt-3">
                 Cancele quando quiser • Sem fidelidade

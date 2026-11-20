@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -31,12 +31,15 @@ const LoadingFallback = () => (
 
 const AppRoutes = () => {
   const { user } = useAuth();
+  const [params] = useSearchParams();
+  const plan = params.get('plan');
+  const afterLogin = plan === 'monthly' || plan === 'yearly' ? `/subscription?plan=${plan}` : '/dashboard';
 
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
         <Route path="/home" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-        <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
+        <Route path="/login" element={user ? <Navigate to={afterLogin} replace /> : <Login />} />
         
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />

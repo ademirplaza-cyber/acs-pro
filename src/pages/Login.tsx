@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import {
   Activity,
   Eye,
@@ -187,7 +186,6 @@ const TermsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
 
 export const Login: React.FC = () => {
   const { login, register } = useAuth();
-  const navigate = useNavigate();
 
   const [screenMode, setScreenMode] = useState<ScreenMode>('LOGIN');
   const [email, setEmail] = useState('');
@@ -277,9 +275,7 @@ export const Login: React.FC = () => {
         return;
       }
       const result = await login(email.trim(), password);
-      if (result) {
-        navigate('/');
-      } else {
+      if (!result) {
         setError('Email ou senha incorretos. Verifique seus dados.');
       }
     } catch (err) {

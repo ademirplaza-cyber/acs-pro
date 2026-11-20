@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
@@ -20,7 +20,8 @@ import {
 export default function Subscription() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [params] = useSearchParams();
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>(params.get('plan') === 'yearly' ? 'yearly' : 'monthly');
   const [isLoading, setIsLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'verifying' | 'success' | 'error' | 'cancelled'>('idle');
   const [message, setMessage] = useState('');
