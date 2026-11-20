@@ -75,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 2. Criar assinatura recorrente
     const isYearly = plan === 'yearly';
-    const value = isYearly ? 299.90 : 29.90;
+    const value = isYearly ? 99.90 : 9.90;
     const cycle = isYearly ? 'YEARLY' : 'MONTHLY';
     const description = isYearly
       ? 'ACS Top - Plano Anual (Recorrente)'

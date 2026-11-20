@@ -115,7 +115,7 @@ const LandingPage: React.FC = () => {
     },
     {
       q: 'Qual a diferença entre o plano mensal e anual?',
-      a: 'Ambos têm as mesmas funcionalidades. O plano anual oferece uma economia de mais de 15% — você paga R$ 299,90 por ano em vez de R$ 358,80 (12x R$ 29,90).',
+      a: 'Ambos têm as mesmas funcionalidades. O plano anual oferece uma economia de mais de 15% — você paga R$ 99,90 por ano em vez de R$ 118,80 (12x R$ 9,90).',
     },
   ];
 
@@ -324,7 +324,7 @@ const LandingPage: React.FC = () => {
               </div>
 
               <div className="mb-6">
-                <span className="text-4xl font-extrabold text-gray-900">R$ 29,90</span>
+                <span className="text-4xl font-extrabold text-gray-900">R$ 9,90</span>
                 <span className="text-gray-400 text-sm ml-1">/mês</span>
               </div>
 
@@ -348,7 +348,7 @@ const LandingPage: React.FC = () => {
               </ul>
 
               <a
-                href={whatsappLink('Mensal - R$ 29,90/mês')}
+                href={whatsappLink('Mensal - R$ 9,90/mês')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
@@ -378,11 +378,11 @@ const LandingPage: React.FC = () => {
               </div>
 
               <div className="mb-2">
-                <span className="text-4xl font-extrabold text-white">R$ 299,90</span>
+                <span className="text-4xl font-extrabold text-white">R$ 99,90</span>
                 <span className="text-blue-200/70 text-sm ml-1">/ano</span>
               </div>
               <p className="text-green-300 text-xs font-semibold mb-6">
-                Equivale a R$ 24,99/mês — economia de R$ 58,90
+                Equivale a aproximadamente R$ 8,33/mês — economia de R$ 18,90
               </p>
 
               <ul className="space-y-3 mb-8 flex-1">
@@ -405,7 +405,7 @@ const LandingPage: React.FC = () => {
               </ul>
 
               <a
-                href={whatsappLink('Anual - R$ 299,90/ano (melhor custo-benefício)')}
+                href={whatsappLink('Anual - R$ 99,90/ano (melhor custo-benefício)')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-3.5 px-4 bg-white text-blue-700 font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all active:scale-[0.98] flex items-center justify-center gap-2"

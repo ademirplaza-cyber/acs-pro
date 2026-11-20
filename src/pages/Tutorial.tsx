@@ -263,7 +263,7 @@ const tutorialSections: TutorialSection[] = [
       },
       {
         title: 'Planos disponíveis',
-        description: 'Após os 30 dias, escolha entre: Plano Mensal (R$ 29,90/mês) ou Plano Anual (R$ 299,90/ano — economia de R$ 59,00). O pagamento é feito com cartão de crédito via Stripe (ambiente seguro).',
+        description: 'Após os 30 dias, escolha entre: Plano Mensal (R$ 9,90/mês) ou Plano Anual (R$ 99,90/ano — economia de R$ 18,90). O pagamento é feito pelo Asaas.',
       },
       {
         title: 'Renovação automática',

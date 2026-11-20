@@ -264,7 +264,7 @@ export default function Subscription() {
         {selectedPlan === 'yearly' && (
           <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
-            Economia de R$59,00
+            Economia de R$18,90
           </span>
         )}
       </div>
@@ -288,7 +288,7 @@ export default function Subscription() {
           <div className="mb-4">
             <span className="text-sm text-gray-400 line-through">R$ 34,90</span>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-gray-800">R$ 29,90</span>
+              <span className="text-3xl font-bold text-gray-800">R$ 9,90</span>
               <span className="text-gray-500">/mês</span>
             </div>
           </div>
@@ -327,14 +327,14 @@ export default function Subscription() {
           <div className="mb-4">
             <span className="text-sm text-gray-400 line-through">R$ 349,90</span>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-gray-800">R$ 299,90</span>
+              <span className="text-3xl font-bold text-gray-800">R$ 99,90</span>
               <span className="text-gray-500">/ano</span>
             </div>
-            <p className="text-xs text-green-600 font-medium mt-1">Equivale a R$ 24,99/mês</p>
+            <p className="text-xs text-green-600 font-medium mt-1">Equivale a aproximadamente R$ 8,33/mês</p>
           </div>
 
           <ul className="space-y-3">
-            {['Tudo do plano mensal', 'Economia de R$ 59,00/ano', 'Prioridade no suporte', 'Atualizações antecipadas', 'Backup automático', 'Oferta por tempo limitado'].map((item) => (
+            {['Tudo do plano mensal', 'Economia de R$ 18,90/ano', 'Prioridade no suporte', 'Atualizações antecipadas', 'Backup automático', 'Oferta por tempo limitado'].map((item) => (
               <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
                 <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                 <span>{item}</span>
@@ -374,7 +374,7 @@ export default function Subscription() {
           ) : (
             <>
               <CreditCard className="w-5 h-5" />
-              Assinar Agora — {selectedPlan === 'monthly' ? 'R$ 29,90/mês' : 'R$ 299,90/ano'}
+              Assinar Agora — {selectedPlan === 'monthly' ? 'R$ 9,90/mês' : 'R$ 99,90/ano'}
             </>
           )}
         </button>
